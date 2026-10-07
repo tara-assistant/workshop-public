@@ -18,7 +18,7 @@ public/
 └── README.md
 ```
 
-There is no projects wrapper or root generated website copy. Portfolio templates and shared App Hub assets live in `tools/app-hub/`. Each app has one categorized source root.
+There is no projects wrapper or root generated website copy. The shared Jihad + Tara workshop home and App Hub assets live in `tools/app-hub/`. Tools and experiments come first; one combined profile, credentials, experience, and work/docs/social links follow. `/tara/` redirects to `/#profile`, including without JavaScript. Each app has one categorized source root.
 
 ## Build and checks
 
@@ -41,11 +41,11 @@ node tools/app-hub/build.mjs --out tools/app-hub/staging/<fresh-name>
 node tools/app-hub/check-public.mjs tools/app-hub/staging/<fresh-name>
 ```
 
-Set `PLAYWRIGHT_MODULE` only when needed. These checks cover content and controls, not live hosting headers or login. Generated output and caches are ignored and removed after verification.
+Set `PLAYWRIGHT_MODULE` only when needed. These checks cover the exact 20-file content allowlist, shared profile/redirect, inline favicon, safe new-tab app/work/docs/social links, local section anchors, absence of private addresses/navigation, and controls at 320/375/1280 pixels. Trip Planner and Snake Arcade are working browser tools; Field Atlas remains a prototype with synthetic data. The checker saves fresh screenshots, including home views at 375×812 and 1280×900, and prints their paths. These checks do not verify live hosting headers, login, or real Telegram clients. Ignored candidates and temporary screenshots can be retained for operator review.
 
 ## Shared UI and privacy
 
-One canonical card renderer and stylesheet set serve public and protected private views. The private repository contains only its bootstrap, catalog, configuration, builder, and checks. It consumes reviewed content-hashed public assets with SHA-384 pins and reads its own protected same-origin catalog. Public pages never contain private app metadata.
+One canonical card renderer and stylesheet set serve public and protected private views. The private repository contains only its bootstrap, catalog, configuration, builder, and checks. It consumes reviewed content-hashed public assets with SHA-384 pins and reads its own protected same-origin catalog. Public pages never contain private app metadata, hostnames, or navigation links. A protected Telegram entry must be configured separately from the public Mini App; this redesign leaves actual bot app/menu settings untouched. Simulated launches open visible public destinations through `WebApp.openLink()` and keep section anchors local.
 
 Only the four exact pinned shared asset URLs receive `Access-Control-Allow-Origin: *`. These are public CSS/module bytes fetched without credentials, so production and protected private previews can use them without an origin-specific copy. No wildcard route, credential permission, private catalog CORS, or Access policy change is introduced. MIME types and immutable cache headers are generated. The public manifest is revalidated rather than cached indefinitely. Actual hosting headers and Telegram webview integrity compatibility still need live verification.
 

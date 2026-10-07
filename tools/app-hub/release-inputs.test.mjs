@@ -22,11 +22,10 @@ test('catalog allowlist has 16 fixed public release files and uses category sour
   ]);
   assert.equal(catalog.projects[0].build, 'trip-planner-preview');
 });
-test('ordinary-browser private navigation is present and initially visible', async () => {
+test('public template has no private navigation or hostname', async () => {
   const template = await readFile(resolve(projectDir, 'index.html'), 'utf8');
   assert.match(template, /href="\/assets\/app-hub-nav\.css"/);
-  assert.match(template, /id="private-apps-link" href="https:\/\/private\.projects\.metaengineershub\.com\/"/);
-  assert.doesNotMatch(template, /id="private-apps-link"[^>]*\shidden(?:\s|>|=)/i);
+  assert.doesNotMatch(template, /id="private-apps-link"|private[.-]projects\./i);
 });
 for (const [name, change] of [
   ['reserved Tara route', item => { item.slug = 'tara'; }],
