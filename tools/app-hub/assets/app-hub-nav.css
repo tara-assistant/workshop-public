@@ -1,16 +1,4 @@
-#private-apps-link {
-  color: var(--green);
-}
-
-@media (max-width: 560px) {
-  .header-inner {
-    flex-wrap: wrap;
-    padding-block: 12px;
-  }
-
-  nav {
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-    gap: 12px 18px;
-  }
-}
+nav{display:flex;align-items:center;gap:24px}
+nav a{min-height:44px;display:inline-flex;align-items:center;color:var(--muted);text-decoration:none;font-size:12px;font-weight:600}
+nav a:hover{color:var(--green);text-decoration:underline;text-underline-offset:5px}
+@media(max-width:700px){.header-inner{flex-wrap:wrap;gap:4px;padding-top:12px}nav{flex:1 1 100%;gap:20px}nav a{font-size:11px}}

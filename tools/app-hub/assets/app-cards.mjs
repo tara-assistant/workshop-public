@@ -39,7 +39,7 @@ export function cardHtml(item) {
     `  <h3>${title}</h3>${category ? `<span class="project-category">${category}</span>` : ''}`,
     `  <p class="project-desc">${field(item, 'description', true)}</p>`,
     privacy ? `  <div class="privacy"><strong>Privacy:</strong> ${privacy}</div>` : '',
-    `  <a class="project-link" aria-label="Open project: ${title}" href="${href}">Open project <span aria-hidden="true">↗</span></a>`,
+    `  <a class="project-link" aria-label="Open project: ${title}" href="${href}" target="_blank" rel="noopener noreferrer">Open project <span aria-hidden="true">↗</span></a>`,
     '</article>'
   ].filter(Boolean).join('\n');
 }
