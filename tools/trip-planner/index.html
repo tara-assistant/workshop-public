@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Trip Planner · 3D Travel Itineraries</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="mobile-app">
+  <div class="app-layout">
+    <!-- Floating Glass Header (Glassmorphic) -->
+    <header class="floating-header">
+      <div class="nav-left">
+        <button class="btn-pill" id="appSwitcherBtn" title="Tesseract Apps">
+          <span class="icon">⊞</span>
+        </button>
+        <div class="brand-badge">
+          <span class="icon">🧭</span>
+          <span class="text">Trip Planner</span>
+        </div>
+      </div>
+      <div class="nav-right">
+        <select class="trip-picker" id="tripSelect" title="Select Itinerary"></select>
+        <button class="btn-pill btn-accent-terra" id="newPlanBtn">+ New</button>
+      </div>
+    </header>
+
+    <!-- App Switcher Dropdown Overlay -->
+    <div class="app-switcher-overlay" id="appSwitcherOverlay">
+      <div class="app-switcher-card">
+        <div class="switcher-title-row">
+          <span>TESSERACT APPS</span>
+          <button class="close-btn" id="closeSwitcherBtn">×</button>
+        </div>
+        <div class="switcher-list">
+          <div class="switcher-row active" id="openTripPlanner">
+            <span class="item-icon">🧭</span>
+            <div>
+              <strong>Trip Planner</strong>
+              <small>3D routes, hikes & city itineraries</small>
+            </div>
+          </div>
+          <a href="https://0e7393a3.workshop-47y.pages.dev" target="_blank" class="switcher-row">
+            <span class="item-icon">⊞</span>
+            <div>
+              <strong>Apps Launchpad</strong>
+              <small>All registered mobile mini apps</small>
+            </div>
+          </a>
+          <a href="https://d469c729.workshop-47y.pages.dev" target="_blank" class="switcher-row">
+            <span class="item-icon">◈</span>
+            <div>
+              <strong>Field Atlas</strong>
+              <small>Infrastructure diagnostics & map</small>
+            </div>
+          </a>
+          <a href="https://projects.metaengineershub.com/snake/" target="_blank" class="switcher-row">
+            <span class="item-icon">🕹️</span>
+            <div>
+              <strong>Snake Arcade</strong>
+              <small>Retro mobile arcade game</small>
+            </div>
+          </a>
+          <a href="https://projects.metaengineershub.com/tara/" target="_blank" class="switcher-row">
+            <span class="item-icon">✨</span>
+            <div>
+              <strong>Tara Assistant</strong>
+              <small>AI portfolio & system overview</small>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Canvas Viewport -->
+    <div class="map-canvas-container">
+      <div id="map"></div>
+
+      <!-- Floating Map Layer Controls (Wanderlog / Google Earth style) -->
+      <div class="map-floating-actions">
+        <button class="map-circle-btn active" id="styleDarkBtn" title="Dark 3D Mode">🗺️</button>
+        <button class="map-circle-btn" id="styleSatBtn" title="Satellite Imagery">🛰️</button>
+        <button class="map-circle-btn" id="styleOutdoorsBtn" title="Topographic Trails">🥾</button>
+        <button class="map-circle-btn" id="terrainToggleBtn" title="3D Terrain / Komoot Topography">⛰️</button>
+        <div class="map-btn-divider"></div>
+        <button class="map-circle-btn toggle-3d-btn active" id="pitchToggleBtn" title="Toggle 2D / 3D Mode">
+          <span id="pitchToggleText">3D</span>
+        </button>
+        <button class="map-circle-btn" id="fitRouteBtn" title="Fit Entire Route">⤢</button>
+        <button class="map-circle-btn" id="locateBtn" title="Find My Location">📍</button>
+      </div>
+
+      <!-- Quick Floating Sheet Toggle on Mobile Map View -->
+      <button class="map-sheet-peek-btn" id="mapSheetPeekBtn">
+        <span class="peek-icon">📋</span>
+        <span id="mapSheetPeekText">Itinerary · 5 Stops</span>
+        <span class="peek-arrow">⌃</span>
+      </button>
+    </div>
+
+    <!-- Itinerary Bottom Sheet (Mobile Tri-State: Peek / Half / Full) & Desktop Sidebar -->
+    <aside class="itinerary-drawer is-half" id="itineraryPanel">
+      <!-- Interactive Drag / Tap Handle -->
+      <div class="drawer-drag-handle" id="sheetHandle">
+        <div class="drag-pill"></div>
+        <div class="handle-info-bar">
+          <div class="handle-title-group">
+            <span class="handle-plan-title" id="handleTitle">Trip Plan</span>
+            <span class="handle-plan-meta" id="handleMeta">Loading stops...</span>
+          </div>
+          <div class="handle-controls">
+            <button class="sheet-state-pill" id="sheetStateToggle" title="Expand or collapse sheet">⤢ View List</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-scroll-body">
+        <!-- Trip Hero Card -->
+        <div class="trip-hero">
+          <div class="hero-top-row">
+            <span class="hero-category" id="planBadge">Travel Route</span>
+            <span class="hero-region" id="planRegion">Italy</span>
+            <div class="hero-actions">
+              <button class="icon-btn-danger" id="deletePlanBtn" title="Delete Plan">🗑️</button>
+            </div>
+          </div>
+          <h2 class="hero-title" id="planHeading">Itinerary</h2>
+          <p class="hero-desc" id="planSummary">Highlights and trail itinerary.</p>
+
+          <!-- Interactive Progress Ring / Bar -->
+          <div class="hero-progress-section">
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+            </div>
+            <div class="progress-info-row">
+              <span class="progress-label" id="progressLabel">0 of 0 stops visited (0%)</span>
+              <button class="link-btn-subtle" id="resetCheckboxesBtn" title="Clear checked stops">Clear Checks</button>
+            </div>
+          </div>
+
+          <div class="hero-stats">
+            <div class="stat-cell"><small>STOPS</small><strong id="statStops">0</strong></div>
+            <div class="stat-cell"><small>DISTANCE</small><strong id="statDist">0 km</strong></div>
+            <div class="stat-cell"><small>DURATION</small><strong id="statDuration">Flexible</strong></div>
+          </div>
+
+          <!-- Multi-Day Selector Carousel -->
+          <div class="day-tabs-container">
+            <div class="day-tabs-scroll" id="dayTabsCarousel"></div>
+          </div>
+
+          <!-- Category Filter Chips -->
+          <div class="filter-carousel" id="filterChips">
+            <button class="filter-chip active" data-type="all">All</button>
+            <button class="filter-chip" data-type="gem">💎 Gems</button>
+            <button class="filter-chip" data-type="sight">🏛️ Sights</button>
+            <button class="filter-chip" data-type="hike">🥾 Hikes</button>
+            <button class="filter-chip" data-type="dining">🍷 Food</button>
+            <button class="filter-chip" data-type="cafe">☕ Cafes</button>
+            <button class="filter-chip" data-type="swim">🏖️ Beach</button>
+            <button class="filter-chip" data-type="boat">⛵ Boat</button>
+          </div>
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="timeline-container">
+          <div class="timeline-header">
+            <div class="timeline-heading-group">
+              <h3 id="timelineHeaderTitle">Today's Itinerary</h3>
+              <span class="timeline-meta" id="timelineCount">0 stops</span>
+            </div>
+            <button class="btn-pill btn-accent-cyan" id="addStopBtn">+ Add Stop</button>
+          </div>
+
+          <!-- Stop Cards Feed -->
+          <div class="stops-feed" id="stopsFeed"></div>
+        </div>
+
+        <!-- Trip Settings Footer inside Drawer -->
+        <div class="drawer-footer">
+          <button class="btn-pill btn-outline" id="beamToTaraBtn">Export trip JSON</button>
+          <button class="btn-pill btn-outline" id="resetDefaultsBtn">Reset Demo Plans</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Modal: Add Custom Stop -->
+    <div class="modal-overlay" id="addStopModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Add Custom Itinerary Stop</h3>
+          <button class="close-btn" id="closeAddStopBtn">×</button>
+        </div>
+        <form class="modal-form" id="addStopForm">
+          <div class="form-group">
+            <label for="inputStopName">Stop Name</label>
+            <input type="text" id="inputStopName" required placeholder="e.g. Viewpoint, Trattoria, Trailhead" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inputStopType">Type</label>
+              <select id="inputStopType">
+                <option value="sight">🏛️ Sight / Culture</option>
+                <option value="gem">💎 Hidden Gem</option>
+                <option value="hike">🥾 Hike / Scenic Trail</option>
+                <option value="dining">🍷 Dining / Dinner</option>
+                <option value="cafe">☕ Cafe / Breakfast</option>
+                <option value="swim">🏖️ Beach / Swimming</option>
+                <option value="boat">⛵ Boat / Water Ferry</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="inputStopTime">Target Time</label>
+              <input type="text" id="inputStopTime" placeholder="e.g. 10:30 AM" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inputStopLat">Latitude</label>
+              <input type="number" step="any" id="inputStopLat" required placeholder="45.4642" />
+            </div>
+            <div class="form-group">
+              <label for="inputStopLng">Longitude</label>
+              <input type="number" step="any" id="inputStopLng" required placeholder="9.1900" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="inputStopWhy">Why Visit</label>
+            <textarea id="inputStopWhy" rows="2" placeholder="What makes this stop memorable?"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="inputStopTips">Practical Tips</label>
+            <input type="text" id="inputStopTips" placeholder="Parking, entrance tips, best time to arrive" />
+          </div>
+          <div class="form-group">
+            <label for="inputStopFood">Local Specialty</label>
+            <input type="text" id="inputStopFood" placeholder="Dish, wine, or drink recommendation" />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-pill" id="cancelStopBtn">Cancel</button>
+            <button type="submit" class="btn-pill btn-accent-cyan">Add to Itinerary</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal: New Plan -->
+    <div class="modal-overlay" id="newPlanModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Create New Trip Plan</h3>
+          <button class="close-btn" id="closeNewPlanBtn">×</button>
+        </div>
+        <form class="modal-form" id="newPlanForm">
+          <div class="form-group">
+            <label for="inputPlanTitle">Trip Name</label>
+            <input type="text" id="inputPlanTitle" required placeholder="e.g. Amalfi Coast Explorer" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inputPlanRegion">Region / City</label>
+              <input type="text" id="inputPlanRegion" required placeholder="e.g. Campania, Italy" />
+            </div>
+            <div class="form-group">
+              <label for="inputPlanCategory">Trip Style</label>
+              <select id="inputPlanCategory">
+                <option value="Scenic Coastal Road">Scenic Coastal Road</option>
+                <option value="Mountain Hike">Mountain Hike & Ridge</option>
+                <option value="Historic City Walk">Historic City Walk</option>
+                <option value="Culinary & Wine Tour">Culinary & Wine Tour</option>
+                <option value="Hidden Gems">Hidden Gems Expedition</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="inputPlanDesc">Trip Description</label>
+            <textarea id="inputPlanDesc" rows="3" placeholder="Brief outline of this journey..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inputPlanLat">Starting Latitude</label>
+              <input type="number" step="any" id="inputPlanLat" required placeholder="40.6333" />
+            </div>
+            <div class="form-group">
+              <label for="inputPlanLng">Starting Longitude</label>
+              <input type="number" step="any" id="inputPlanLng" required placeholder="14.6029" />
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn-pill" id="cancelPlanBtn">Cancel</button>
+            <button type="submit" class="btn-pill btn-accent-terra">Create Trip Plan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast Notification Overlay -->
+    <div class="toast-container" id="toastContainer"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

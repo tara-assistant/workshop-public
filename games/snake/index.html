@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#130d24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Snake · Neon Arcade</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="game-shell" aria-labelledby="game-title">
+    <header class="game-header">
+      <div>
+        <p class="eyebrow">NEON ARCADE / 001</p>
+        <h1 id="game-title">Snake</h1>
+        <p class="tagline">Eat bright. Turn sharp.</p>
+      </div>
+      <div class="scoreboard" aria-label="Game score">
+        <span><small>Score</small><strong id="score">0</strong></span>
+        <span><small>Best</small><strong id="best">0</strong></span>
+        <button id="clear-best" class="text-button" type="button" aria-label="Reset best score">Reset</button>
+      </div>
+    </header>
+
+    <section class="play-panel" aria-label="Snake game and controls">
+      <div class="board-wrap">
+        <canvas id="board" width="600" height="600" aria-label="Snake board"></canvas>
+        <div id="status" class="status" role="status" aria-live="polite">
+          <span id="status-message">Press Start to play</span>
+          <button id="play-again" class="status-action" type="button" hidden>Play again</button>
+        </div>
+      </div>
+
+      <div class="control-dock">
+        <p class="control-label">Steer</p>
+        <div class="controls" aria-label="Direction controls">
+          <button data-direction="up" type="button" aria-label="Move up">▲</button>
+          <div>
+            <button data-direction="left" type="button" aria-label="Move left">◀</button>
+            <button data-direction="down" type="button" aria-label="Move down">▼</button>
+            <button data-direction="right" type="button" aria-label="Move right">▶</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="actions" aria-label="Game actions">
+      <button id="start" class="primary" type="button">Start</button>
+      <button id="pause" type="button">Pause</button>
+      <button id="restart" type="button">Restart</button>
+      <button id="fullscreen" type="button" aria-pressed="false">Fullscreen</button>
+    </nav>
+    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+    <p class="hint">Arrow keys or WASD. Space pauses. Swipe works on touch screens.</p>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

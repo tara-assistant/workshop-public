@@ -1,0 +1,58 @@
+# Public Workshop
+
+This independent repository holds approved public source. The sibling private repository has separate source and history and is not a public build dependency.
+
+## Layout
+
+```text
+public/
+├── .github/workflows/public-checks.yml
+├── diagnostics/field-atlas/
+├── games/snake/
+├── tools/app-hub/
+├── tools/trip-planner/
+├── .gitignore
+├── LICENSE
+└── README.md
+```
+
+There is no projects wrapper or root generated website copy. Portfolio templates and shared App Hub assets live in `tools/app-hub/`. Each app has one categorized source root.
+
+## Build and checks
+
+Run from this repository root:
+
+```sh
+node --test tools/app-hub/release-inputs.test.mjs tools/app-hub/build-pages.test.mjs
+python -B tools/trip-planner/test_build_bundle.py
+node tools/app-hub/build-pages.mjs
+```
+
+The Pages entry point builds a new `dist/` with exactly the public catalog's allowed browser files, pinned shared UI assets, and generated `_headers`. The current catalog produces 21 deployment files. It rejects existing output, links, unsafe paths, and common credential patterns. Public builds never read private source.
+
+For offline browser checks, build a content-only candidate first:
+
+```sh
+node tools/app-hub/build.mjs --out tools/app-hub/staging/<fresh-name>
+node tools/app-hub/check-public.mjs tools/app-hub/staging/<fresh-name>
+```
+
+Set `PLAYWRIGHT_MODULE` only when needed. These checks cover content and controls, not live hosting headers or login. Generated output and caches are ignored and removed after verification.
+
+## Shared UI and privacy
+
+One canonical card renderer and stylesheet set serve public and protected private views. The private repository contains only its bootstrap, catalog, configuration, builder, and checks. It consumes reviewed content-hashed public assets with SHA-384 pins and reads its own protected same-origin catalog. Public pages never contain private app metadata.
+
+Only the four pinned shared asset URLs receive explicit CORS for the private origin. Their MIME types and immutable cache headers are generated. The public manifest is revalidated rather than cached indefinitely. Actual hosting headers and Telegram webview integrity compatibility still need live verification.
+
+## Releases and hosting
+
+Public changes follow feature branches, checked and reviewed pull requests, and approved merges. GitHub checks validate the input boundary, visitor-key transformation, headers, and complete bundle allowlist. Publishing source to a review branch is not a production deployment.
+
+The new `workshop-public` Pages project connects to `tara-assistant/workshop-public`, production branch `main`, build command `node tools/app-hub/build-pages.mjs`, and output `dist`. Automatic deployments are paused during migration. The existing custom domain still serves the legacy `workshop` Pages release until the new output is verified and the domain is moved. The legacy project remains intact with deployment paused; it must not compete for future releases.
+
+Move approved original public source here and remove its private copy through a reviewed private commit and push. Local deletion alone does not update the remote or erase historical commits. Do not force-push or rewrite history without explicit approval.
+
+Public apps request visitors' own browser-safe keys and store them only in their browsers. Never bundle server keys, environment secrets, private research, or personal files.
+
+Original work is copyright © 2026 Jihad Karaki and licensed under the MIT License in `LICENSE`. Third-party notices and terms remain separate.

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "projects": [
+    {
+      "slug": "trip-planner",
+      "title": "Trip Planner",
+      "icon": "⌖",
+      "category": "Maps · itineraries",
+      "description": "A multi-day trip planner for sourced stops, route options, visit checklists, and practical notes.",
+      "privacy": "Mapbox map and route requests go directly from your browser. Provide your own Mapbox public token; it stays in this browser.",
+      "status": "Live",
+      "sourceRoot": "tools/trip-planner",
+      "build": "trip-planner-preview",
+      "files": ["index.html", "styles.css", "app.js", "enhancements.css", "enhancements.js", "client-key.css", "client-key.js"]
+    },
+    {
+      "slug": "field-atlas",
+      "title": "Field Atlas",
+      "icon": "◈",
+      "category": "Field diagnostics · maps",
+      "description": "An interactive Italy map demo with synthetic vibration readings, asset selection, and local inspection marks.",
+      "privacy": "Map tiles and elevation come directly from their named providers. Asset readings are simulated; inspection marks stay in this browser.",
+      "status": "Live",
+      "sourceRoot": "diagnostics/field-atlas",
+      "files": ["index.html", "app.js"]
+    },
+    {
+      "slug": "snake",
+      "title": "Snake Arcade",
+      "icon": "↗",
+      "category": "Game · mobile",
+      "description": "A responsive arcade game with keyboard and touch controls, pause, replay, and a browser-local high score.",
+      "privacy": "No account or app API key. Your best score is stored in this browser.",
+      "status": "Live",
+      "sourceRoot": "games/snake",
+      "files": ["index.html", "styles.css", "game.js"]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+name: Public source checks
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  public-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test public input boundaries and hosting headers
+        run: node --test tools/app-hub/release-inputs.test.mjs tools/app-hub/build-pages.test.mjs
+      - name: Test visitor-key bundle transformation
+        run: python -B tools/trip-planner/test_build_bundle.py
+      - name: Build and verify the deployment allowlist
+        run: node tools/app-hub/build-pages.mjs

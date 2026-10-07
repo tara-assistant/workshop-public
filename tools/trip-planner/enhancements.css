@@ -1,0 +1,402 @@
+/* Trip Planner Enhanced Styles: Desktop Docking, 2D/3D Controls, Terrain & Weather */
+:root {
+  --sidebar-w: 440px;
+}
+
+html, body, .app-layout {
+  height: 100dvh;
+  width: 100%;
+}
+
+.itinerary-drawer {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.drawer-scroll-body {
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.drawer-scroll-body > * {
+  flex-shrink: 0;
+}
+
+/* Stop checks and links */
+.stop-check-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.stop-pill-link {
+  min-height: 40px;
+  padding: 9px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stop-title-line {
+  align-items: center;
+}
+
+.stop-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.day-tabs-scroll, .phase-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.day-tab {
+  min-height: 40px;
+}
+
+.transport-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.transport-row select {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  min-height: 44px;
+}
+
+.route-status {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.packing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.packing-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  font-size: 13px;
+}
+
+.packing-item input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--accent-emerald);
+}
+
+.mapbox-custom-pin.visited {
+  background: #228c74;
+}
+
+.pin-gem { background: #947233; }
+.pin-swim, .pin-boat { background: #246f93; }
+
+.pin-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #16202c;
+}
+
+.pin-detail button {
+  padding: 10px;
+  min-height: 40px;
+}
+
+.modal-dialog {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modal-form input, .modal-form textarea, .modal-form select {
+  font-size: 16px;
+}
+
+#mapMessage {
+  position: absolute;
+  top: 70px;
+  left: 15px;
+  max-width: calc(100% - 95px);
+  background: #121c27;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  z-index: 5;
+}
+
+#mapMessage:empty {
+  display: none;
+}
+
+#controlHint {
+  position: absolute;
+  left: 12px;
+  top: 115px;
+  background: rgba(18, 28, 39, .94);
+  color: #fff;
+  border-radius: 8px;
+  max-width: 240px;
+  padding: 9px;
+  font-size: 12px;
+  z-index: 4;
+}
+
+#controlHint:empty {
+  display: none;
+}
+
+.map-circle-btn {
+  min-width: 42px;
+  min-height: 42px;
+}
+
+#navigationSteps {
+  font-size: 13px;
+  line-height: 1.6;
+  padding-left: 20px;
+  margin-top: 8px;
+}
+
+#navigationSteps:empty {
+  display: none;
+}
+
+/* Weather Widget */
+.weather-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-glass);
+  border-radius: 9999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  user-select: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: default;
+}
+
+.weather-badge .weather-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.weather-badge .weather-temp {
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.weather-badge .weather-desc {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+/* 2D / 3D and Terrain Control Badges */
+.toggle-3d-btn {
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.toggle-3d-btn.is-3d {
+  background: var(--accent-terra) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.toggle-3d-btn.is-2d {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: var(--text-secondary) !important;
+}
+
+.map-circle-btn.active-terrain {
+  background: var(--accent-emerald) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(42, 157, 143, 0.6);
+}
+
+/* ========================================================= */
+/* Desktop Layout: Clean Sidebar Docking Without Header Overlap */
+/* ========================================================= */
+@media (min-width: 769px) {
+  .app-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  .map-sheet-peek-btn {
+    display: none !important;
+  }
+
+  .map-canvas-container {
+    flex: 1 1 auto !important;
+    position: relative !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    z-index: 1 !important;
+  }
+
+  #map {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Floating glass header stays bounded strictly over the map */
+  .floating-header {
+    position: absolute !important;
+    top: 14px !important;
+    left: 14px !important;
+    right: calc(var(--sidebar-w) + 24px) !important;
+    max-width: calc(100vw - var(--sidebar-w) - 36px) !important;
+    height: 52px !important;
+    z-index: 50 !important;
+  }
+
+  /* Right Sidebar docks cleanly on the right with independent full-height scrolling */
+  .itinerary-drawer {
+    flex: 0 0 var(--sidebar-w) !important;
+    width: var(--sidebar-w) !important;
+    min-width: 380px !important;
+    max-width: var(--sidebar-w) !important;
+    height: 100vh !important;
+    position: relative !important;
+    right: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    border-left: 1px solid var(--border-subtle) !important;
+    border-top: none !important;
+    border-radius: 0 !important;
+    box-shadow: -6px 0 24px rgba(0, 0, 0, 0.4) !important;
+    z-index: 60 !important;
+    background: var(--bg-surface) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Sidebar header bar */
+  .drawer-drag-handle {
+    display: flex !important;
+    flex-direction: column !important;
+    cursor: default !important;
+    padding: 14px 18px 12px !important;
+    border-bottom: 1px solid var(--border-subtle) !important;
+    background: var(--bg-surface) !important;
+    user-select: text !important;
+    flex-shrink: 0 !important;
+  }
+
+  .drag-pill {
+    display: none !important;
+  }
+
+  .drawer-drag-handle .handle-info-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .drawer-drag-handle .sheet-state-pill {
+    display: none !important;
+  }
+
+  /* Clean scroll body starting under the header */
+  .drawer-scroll-body {
+    padding-top: 16px !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    min-height: 0 !important;
+  }
+}
+
+/* ========================================================= */
+/* Mobile Bottom Sheet Layout */
+/* ========================================================= */
+@media (max-width: 768px) {
+  .floating-header {
+    gap: 4px;
+  }
+  .brand-badge {
+    display: none;
+  }
+  .trip-picker {
+    max-width: min(34vw, 150px);
+  }
+  .btn-pill {
+    min-height: 40px;
+    padding: 6px 10px;
+  }
+  .handle-title-group {
+    min-width: 0;
+  }
+  .handle-plan-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 55vw;
+  }
+  .drawer-scroll-body {
+    padding: 12px 14px calc(32px + env(safe-area-inset-bottom));
+  }
+  .map-floating-actions {
+    gap: 5px;
+  }
+  .itinerary-drawer.is-full {
+    height: calc(100dvh - 76px);
+  }
+  .itinerary-drawer.is-peek {
+    height: 100px;
+  }
+  .progress-info-row {
+    gap: 8px;
+  }
+  .timeline-heading-group {
+    flex-wrap: wrap;
+  }
+  #controlHint {
+    top: 75px;
+    max-width: 200px;
+  }
+  .weather-badge {
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .weather-badge .weather-desc {
+    display: none;
+  }
+}
