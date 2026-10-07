@@ -53,7 +53,7 @@ Only the four exact pinned shared asset URLs receive `Access-Control-Allow-Origi
 
 Public changes follow feature branches, checked and reviewed pull requests, and approved merges. GitHub checks validate the input boundary, visitor-key transformation, headers, and complete bundle allowlist. Publishing source to a review branch is not a production deployment.
 
-The new `workshop-public` Pages project connects to `tara-assistant/workshop-public`, production branch `main`, build command `node tools/app-hub/build-pages.mjs`, and output `dist`. Automatic deployments are paused during migration. The existing custom domain still serves the legacy `workshop` Pages release until the new output is verified and the domain is moved. The legacy project remains intact with deployment paused; it must not compete for future releases.
+The new `workshop-public` Pages project connects to `tara-assistant/workshop-public`, production branch `main`, build command `node tools/app-hub/build-pages.mjs`, and output `dist`. Automatic production deployments are enabled for `main`; preview deployments remain disabled. The existing custom domain still serves the legacy `workshop` Pages release until the new output is live, verified, and the domain is moved. The legacy project remains intact with deployment paused; it must not compete for future releases.
 
 Move approved original public source here and remove its private copy through a reviewed private commit and push. Local deletion alone does not update the remote or erase historical commits. Do not force-push or rewrite history without explicit approval.
 
