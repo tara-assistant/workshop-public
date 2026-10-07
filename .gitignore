@@ -1,0 +1,13 @@
+# Local environment values never enter Git.
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
+
+# Reproducible local caches and build output.
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/node_modules/
+/dist/
+/tools/app-hub/staging/
