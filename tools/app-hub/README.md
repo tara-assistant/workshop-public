@@ -43,6 +43,6 @@ The public home has no private entry, address, hidden link, or conditional redir
 
 ## Current hosting migration
 
-The new `workshop-public` Pages project is connected to `workshop-public`, production branch `main`, using `build-pages.mjs` and `dist`. Deployment remains paused until checks and review pass. The custom domain remains on the legacy release until cutover. Local builds and API configuration readback are not live deployment evidence.
+The new `workshop-public` Pages project is connected to `tara-assistant/workshop-public`, production branch `main`, using build command `node tools/app-hub/build-pages.mjs` and output `dist`. Automatic production deployments are enabled for `main`; preview deployments remain disabled. The custom domain remains on the legacy release until the new production output is live, verified, and the domain is moved. Local builds and Pages configuration readback alone are not live-deployment evidence.
 
 Public source changes use checked and reviewed pull requests followed by approved merges. Original work is copyright © 2026 Jihad Karaki; third-party notices remain separate.
