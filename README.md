@@ -7,6 +7,8 @@ This independent repository holds approved public source. The sibling private re
 ```text
 public/
 ├── .github/workflows/public-checks.yml
+├── .node-version
+├── .python-version
 ├── diagnostics/field-atlas/
 ├── games/snake/
 ├── tools/app-hub/
@@ -19,6 +21,8 @@ public/
 There is no projects wrapper or root generated website copy. Portfolio templates and shared App Hub assets live in `tools/app-hub/`. Each app has one categorized source root.
 
 ## Build and checks
+
+Use Node.js 22 and Python 3.12, matching GitHub CI. Repository-root `.node-version` and `.python-version` select these versions for Cloudflare Pages builds. The build uses Node's native fetch and modern Python path handling; do not rely on older defaults. Cloudflare documents these version files in its [build image reference](https://developers.cloudflare.com/pages/configuration/build-image/). Actual build logs must confirm the selected versions before release.
 
 Run from this repository root:
 
