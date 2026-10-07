@@ -5,19 +5,26 @@ import { sharedUiSources, versionedAsset } from './release-inputs.mjs';
 
 const manifest = () => ({ schemaVersion: 1, assets: Object.fromEntries(sharedUiSources.map(name => [name, versionedAsset(name, Buffer.from(`/* ${name} */\n`))])) });
 
-test('only the four content-hashed shared assets receive anonymous private-origin CORS', () => {
+test('only the four content-hashed public assets receive anonymous all-origin CORS', () => {
   const m = manifest();
   const text = hostingHeaders(m);
-  assert.equal(text.split('Access-Control-Allow-Origin: https://private.projects.metaengineershub.com').length - 1, 4);
+  assert.equal(text.split('Access-Control-Allow-Origin: *').length - 1, 4);
   assert.equal(text.split('Cache-Control: public, max-age=31536000, immutable').length - 1, 4);
   assert.equal(text.split('X-Content-Type-Options: nosniff').length - 1, 4);
   for (const [name, asset] of Object.entries(m.assets)) {
     const type = name.endsWith('.mjs') ? 'text/javascript' : 'text/css';
-    assert(text.includes(`/${asset.path}\n  Access-Control-Allow-Origin:`));
+    assert(text.includes(`/${asset.path}\n  Access-Control-Allow-Origin: *\n`));
     assert(text.includes(`Content-Type: ${type}; charset=utf-8`));
   }
   assert(text.startsWith('/assets/ui-manifest.json\n  Cache-Control: no-cache\n'));
-  assert.doesNotMatch(text, /Allow-Credentials|catalog\.json|station-flow|digital-health|api[_-]?key|\*/);
+  assert.doesNotMatch(text, /Allow-Credentials|catalog\.json|station-flow|digital-health|api[_-]?key/);
+  const blocks = text.trim().split('\n\n');
+  assert.equal(blocks.length, 5);
+  assert.doesNotMatch(blocks[0], /Access-Control/);
+  for (const block of blocks.slice(1)) {
+    assert.match(block.split('\n')[0], /^\/assets\/[a-z-]+\.[0-9a-f]{16}\.(css|mjs)$/);
+    assert.equal(block.split('*').length - 1, 1, 'The wildcard belongs only in the CORS value, never the route.');
+  }
 });
 
 for (const [label, change] of [

@@ -21,7 +21,7 @@ python -B tools/trip-planner/test_build_bundle.py
 node tools/app-hub/build-pages.mjs
 ```
 
-`build-pages.mjs` wraps the guarded content builder and emits a fresh `dist/`. The current allowlist contains 20 content files plus generated `_headers`. The final output is checked against that exact set; it is never the source checkout. The wrapper gives the four content-hashed shared assets explicit private-origin CORS, correct CSS/module MIME types, immutable caching, and nosniff headers. The manifest is served with revalidation.
+`build-pages.mjs` wraps the guarded content builder and emits a fresh `dist/`. The current allowlist contains 20 content files plus generated `_headers`. The final output is checked against that exact set; it is never the source checkout. The wrapper gives only the four exact content-hashed shared assets anonymous all-origin CORS (`Access-Control-Allow-Origin: *`), correct CSS/module MIME types, immutable caching, and nosniff headers. These public assets can serve production and protected private preview hosts without sending credentials. No wildcard route, credential allowance, catalog CORS, or Access policy change is added. The manifest is served with revalidation.
 
 To verify interface content offline:
 

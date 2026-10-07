@@ -43,7 +43,7 @@ Set `PLAYWRIGHT_MODULE` only when needed. These checks cover content and control
 
 One canonical card renderer and stylesheet set serve public and protected private views. The private repository contains only its bootstrap, catalog, configuration, builder, and checks. It consumes reviewed content-hashed public assets with SHA-384 pins and reads its own protected same-origin catalog. Public pages never contain private app metadata.
 
-Only the four pinned shared asset URLs receive explicit CORS for the private origin. Their MIME types and immutable cache headers are generated. The public manifest is revalidated rather than cached indefinitely. Actual hosting headers and Telegram webview integrity compatibility still need live verification.
+Only the four exact pinned shared asset URLs receive `Access-Control-Allow-Origin: *`. These are public CSS/module bytes fetched without credentials, so production and protected private previews can use them without an origin-specific copy. No wildcard route, credential permission, private catalog CORS, or Access policy change is introduced. MIME types and immutable cache headers are generated. The public manifest is revalidated rather than cached indefinitely. Actual hosting headers and Telegram webview integrity compatibility still need live verification.
 
 ## Releases and hosting
 

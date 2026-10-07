@@ -8,7 +8,6 @@ import { readSafe, scan, sharedUiAssets, sharedUiSources, uiManifest, validatePu
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(projectDir, '../..');
-const privateOrigin = 'https://private.projects.metaengineershub.com';
 
 export function hostingHeaders(manifest) {
   if (manifest?.schemaVersion !== 1 || !manifest.assets || Object.keys(manifest.assets).length !== sharedUiSources.length) throw new Error('Invalid shared UI manifest.');
@@ -18,7 +17,8 @@ export function hostingHeaders(manifest) {
     const ext = name.endsWith('.mjs') ? 'mjs' : 'css';
     const stem = name.slice(0, -(ext.length + 1));
     if (!asset || !new RegExp(`^assets/${stem}\\.[0-9a-f]{16}\\.${ext}$`).test(asset.path) || !/^sha384-[A-Za-z0-9+/]{64}$/.test(asset.integrity)) throw new Error('Invalid pinned asset in hosting manifest.');
-    blocks.push(`/${asset.path}\n  Access-Control-Allow-Origin: ${privateOrigin}\n  Content-Type: ${ext === 'mjs' ? 'text/javascript' : 'text/css'}; charset=utf-8\n  Cache-Control: public, max-age=31536000, immutable\n  X-Content-Type-Options: nosniff`);
+    // These public bytes also serve protected preview hosts. No credentials are allowed.
+    blocks.push(`/${asset.path}\n  Access-Control-Allow-Origin: *\n  Content-Type: ${ext === 'mjs' ? 'text/javascript' : 'text/css'}; charset=utf-8\n  Cache-Control: public, max-age=31536000, immutable\n  X-Content-Type-Options: nosniff`);
   }
   return blocks.join('\n\n') + '\n';
 }
