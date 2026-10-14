@@ -6,12 +6,25 @@
       "title": "Trip Planner",
       "icon": "⌖",
       "category": "Maps · itineraries",
-      "description": "A multi-day trip planner for sourced stops, route options, visit checklists, and practical notes.",
-      "privacy": "Mapbox map and route requests go directly from your browser. Provide your own Mapbox public token; it stays in this browser.",
+      "description": "Plan multi-day trips on an open 3D map with routes, weather and checklists. Edit by hand or let your own agent do it.",
+      "privacy": "No account and no API key. Trips stay in this browser. Map, route and weather requests go directly from your browser to OpenFreeMap, OpenStreetMap services and Open-Meteo.",
       "status": "Live",
       "sourceRoot": "tools/trip-planner",
-      "build": "trip-planner-preview",
-      "files": ["index.html", "styles.css", "app.js", "enhancements.css", "enhancements.js", "client-key.css", "client-key.js"]
+      "files": [
+        "index.html",
+        "favicon.svg",
+        "css/tokens.css",
+        "css/app.css",
+        "js/app.js",
+        "js/geo.js",
+        "js/gpx.js",
+        "js/mapview.js",
+        "js/store.js",
+        "js/util.js",
+        "schema/trip.schema.json",
+        "schema/validate.mjs",
+        "samples/sardegna.json"
+      ]
     },
     {
       "slug": "field-atlas",

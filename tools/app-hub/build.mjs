@@ -1,5 +1,3 @@
-import { execFileSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 import { lstat, mkdir, readdir, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +6,6 @@ import { checkPath, publicCards, readSafe, scan, sharedUiAssets, uiManifest, val
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(projectDir, '../..');
-const stagingRoot = resolve(projectDir, 'staging');
 const args = process.argv.slice(2);
 let outputArg = 'dist';
 for (let i = 0; i < args.length; i++) {
@@ -39,37 +36,6 @@ async function listFiles(root, prefix = '') {
   return files.sort();
 }
 
-async function buildTripPlannerBundle(item) {
-  const sourceRoot = resolve(repositoryRoot, item.sourceRoot);
-  const script = resolve(sourceRoot, 'build_bundle.py');
-  await checkPath(repositoryRoot, sourceRoot);
-  await checkPath(repositoryRoot, script);
-  if (!(await lstat(script)).isFile()) throw new Error('Trip Planner bundle builder is not a regular file.');
-  await mkdir(stagingRoot, { recursive: true });
-  await checkPath(repositoryRoot, stagingRoot);
-  const bundleRoot = resolve(stagingRoot, `trip-planner-bundle-${randomUUID()}`);
-  await checkPath(repositoryRoot, bundleRoot, true);
-  const python = process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
-  const relativeScript = relative(repositoryRoot, script);
-  try {
-    const output = execFileSync(python, ['-B', relativeScript, '--output', bundleRoot], {
-      cwd: repositoryRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    if (output.trim()) console.log(output.trim());
-  } catch (error) {
-    const detail = error.stderr?.toString('utf8').trim() || error.message;
-    throw new Error(`Trip Planner public bundle step failed: ${detail}`);
-  }
-  const actual = await listFiles(bundleRoot);
-  const expected = [...item.files].sort();
-  if (actual.length !== expected.length || actual.some((file, index) => file !== expected[index])) {
-    throw new Error(`Trip Planner bundle file set mismatch. Expected ${expected.join(', ')}; found ${actual.join(', ')}.`);
-  }
-  return bundleRoot;
-}
-
 const cardMarkup = cardsHtml(publicCards(catalog)).replace(/^/gm, '        ');
 const uiAssets = await sharedUiAssets(repositoryRoot, projectDir);
 let template = (await readSafe(repositoryRoot, resolve(projectDir, 'index.html'))).toString('utf8');
@@ -96,12 +62,9 @@ const files = new Map([
   ...uiAssets.map(asset => [asset.path, asset.bytes])
 ]);
 for (const item of catalog.projects) {
-  const sourceRoot = item.build === 'trip-planner-preview'
-    ? await buildTripPlannerBundle(item)
-    : resolve(repositoryRoot, item.sourceRoot);
+  const sourceRoot = resolve(repositoryRoot, item.sourceRoot);
   for (const file of item.files) {
     const bytes = await readSafe(sourceRoot, resolve(sourceRoot, file));
-    if (bytes.toString('utf8').includes('__MAPBOX_TOKEN__')) throw new Error(`Unexpanded visitor-token placeholder in ${item.slug}/${file}.`);
     files.set(`${item.slug}/${file}`, bytes);
   }
 }

@@ -16,7 +16,7 @@ export const fixedPublicFiles = ['index.html', 'tara/index.html', 'assets/tara-a
 // Shared presentation assets. Each ships under a content-hashed name so a consumer can pin it.
 export const sharedUiSources = ['app-hub.css', 'app-hub-nav.css', 'app-cards.css', 'app-cards.mjs'];
 const requiredProjectKeys = ['slug', 'title', 'description', 'privacy', 'status', 'sourceRoot', 'files'];
-const allowedProjectKeys = new Set([...requiredProjectKeys, 'icon', 'category', 'build']);
+const allowedProjectKeys = new Set([...requiredProjectKeys, 'icon', 'category']);
 
 export function validatePublicCatalog(catalog, repositoryRoot, projectDir) {
   if (catalog?.schemaVersion !== 1 || !Array.isArray(catalog.projects) || !catalog.projects.length) throw new Error('Invalid project catalog schema.');
@@ -32,12 +32,6 @@ export function validatePublicCatalog(catalog, repositoryRoot, projectDir) {
     }
     const sourceParts = typeof item.sourceRoot === 'string' ? item.sourceRoot.split('/') : [];
     if (!safePath(item.sourceRoot) || sourceParts.length !== 2 || !sourceCategories.has(sourceParts[0]) || sourceParts.some(part => part.toLowerCase() === 'private') || isWithin(projectDir, resolve(repositoryRoot, item.sourceRoot))) throw new Error(`Unsafe source root for ${item.slug}.`);
-    if (item.slug === 'trip-planner') {
-      if (item.build !== 'trip-planner-preview' || item.sourceRoot !== 'tools/trip-planner') throw new Error('Trip Planner must use its reviewed public bundle builder.');
-    } else if (Object.hasOwn(item, 'build')) {
-      throw new Error(`Unapproved public build operation for ${item.slug}.`);
-    }
-    if (Object.hasOwn(item, 'build') && item.build !== 'trip-planner-preview') throw new Error(`Unknown public build operation for ${item.slug}.`);
     if (!Array.isArray(item.files) || !item.files.includes('index.html')) throw new Error(`Public allowlist needs index.html: ${item.slug}.`);
     const files = new Set();
     for (const file of item.files) {

@@ -10,17 +10,17 @@ import { publicCards, scan, sharedUiAssets, sharedUiSources, validatePublicCatal
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(projectDir, '../..');
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
-// 12 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder (20 in all).
-test('catalog allowlist has 16 fixed public release files and uses category source roots', () => {
+// 18 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder.
+test('catalog allowlist has 22 fixed public release files and uses category source roots', () => {
   const files = [...validatePublicCatalog(catalog, repositoryRoot, projectDir)];
-  assert.equal(files.length, 16);
+  assert.equal(files.length, 22);
   assert(!files.some(file => /private|projects\.json/.test(file)));
   assert.deepEqual(catalog.projects.map(item => item.sourceRoot), [
     'tools/trip-planner',
     'diagnostics/field-atlas',
     'games/snake'
   ]);
-  assert.equal(catalog.projects[0].build, 'trip-planner-preview');
+  assert(catalog.projects.every(item => !Object.hasOwn(item, 'build')));
 });
 test('public template has no private navigation or hostname', async () => {
   const template = await readFile(resolve(projectDir, 'index.html'), 'utf8');
@@ -37,14 +37,13 @@ for (const [name, change] of [
   ['unknown source category', item => { item.sourceRoot = 'assets/trip-planner'; }],
   ['absolute Windows source', item => { item.sourceRoot = 'C:/private'; }],
   ['source traversal', item => { item.sourceRoot = 'tools/../private'; }],
-  ['missing Trip Planner bundle builder', item => { delete item.build; }],
   ['unapproved build operation', item => { item.build = 'run-arbitrary-command'; }],
   ['hidden file', item => { item.files.push('.env'); }],
   ['unsupported executable', item => { item.files.push('server.py'); }],
   ['file traversal', item => { item.files.push('../private-hub.html'); }],
   ['case collision', item => { item.files.push('INDEX.HTML'); }],
-  ['file/directory collision', item => { item.files.push('app.js/index.html'); }],
-  ['missing entry point', item => { item.files = ['app.js']; }],
+  ['file/directory collision', item => { item.files.push('js/app.js/index.html'); }],
+  ['missing entry point', item => { item.files = ['js/app.js']; }],
   ['Windows device', item => { item.files.push('CON.html'); }]
 ]) {
   test(`reject ${name}`, () => {
@@ -55,7 +54,7 @@ for (const [name, change] of [
 }
 test('reject build operation on an unapproved route', () => {
   const changed = structuredClone(catalog);
-  changed.projects[1].build = 'trip-planner-preview';
+  changed.projects[1].build = 'run-arbitrary-command';
   assert.throws(() => validatePublicCatalog(changed, repositoryRoot, projectDir));
 });
 test('scan byte encodings and expanded credential formats', () => {
