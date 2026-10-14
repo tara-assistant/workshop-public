@@ -104,5 +104,6 @@ export async function sharedUiAssets(repositoryRoot, projectDir) {
   return assets;
 }
 export const uiManifest = assets => ({ schemaVersion: 1, assets: Object.fromEntries(assets.map(({ name, path, integrity }) => [name, { path, integrity }])) });
-export const publicCards = catalog => catalog.projects.map(({ slug, title, icon, category, status, description, privacy }) =>
-  ({ title, icon, category, status, description, privacy, href: `/${slug}/` }));
+export const publicRepoBase = 'https://github.com/tara-assistant/workshop-public/tree/main/';
+export const publicCards = catalog => catalog.projects.map(({ slug, title, icon, category, status, description, privacy, sourceRoot }) =>
+  ({ title, icon, category, status, description, privacy, href: `/${slug}/`, repo: publicRepoBase + sourceRoot }));

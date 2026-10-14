@@ -16,7 +16,7 @@ const candidateRoot = resolve(process.cwd(), candidateArg);
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
 const uiAssets = await sharedUiAssets(repositoryRoot, projectDir);
 const expectedFiles = [...validatePublicCatalog(catalog, repositoryRoot, projectDir), ...uiAssets.map(asset => asset.path)].sort();
-assert.equal(expectedFiles.length, 20, 'Public content allowlist must remain exactly 20 files.');
+assert.equal(expectedFiles.length, 26, 'Public content allowlist must remain exactly 26 files.');
 const privateBoundary = /private[.-]projects\.|private[- ]apps|PRIVATE_PROJECTS:|No private apps yet|private-apps\.json|private-hub\.html|private-app-hub\.css|catalog\.json/i;
 for (const name of ['index.html', 'tara.html', ...uiAssets.map(asset => `assets/${asset.name}`)]) {
   assert.doesNotMatch((await readSafe(repositoryRoot, resolve(projectDir, name))).toString('utf8'), privateBoundary, `Private address or navigation in public source: ${name}`);
@@ -128,7 +128,8 @@ try {
         assert(await page.locator('#profile').getByRole('heading', { name: 'Tara', exact: true }).isVisible());
         assert.match(await page.locator('#profile').innerText(), /PhD[\s\S]*Politecnico di Milano[\s\S]*AI assistant[\s\S]*ATM Milan/);
         assert(await page.evaluate(() => Boolean(document.querySelector('#projects').compareDocumentPosition(document.querySelector('#profile')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'Tools must precede the shared profile.');
-        assert.match(await page.locator('#projects').innerText(), /Field Atlas is a prototype demo with synthetic readings/);
+        assert.match(await page.locator('#projects').innerText(), /Open any tool live, or read its source on GitHub/);
+        assert.doesNotMatch(portfolioHtml, /Mapbox/i, 'The portfolio must not mention a Mapbox token.');
         assert.equal(await page.locator('.project-card').count(), 3);
         assert.deepEqual(await page.locator('.project-card h3').allTextContents(), catalog.projects.map(item => item.title));
         assert(await page.locator('.project-card').evaluateAll(cards => cards.every(card => {
@@ -137,7 +138,9 @@ try {
           return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
         })), 'All three catalog cards must be visible, with no conditional hiding.');
         const links = await page.locator('a[href]').evaluateAll(elements => elements.map(element => ({ href: element.getAttribute('href'), target: element.getAttribute('target'), rel: element.getAttribute('rel') })));
-        assert.equal(links.filter(link => !link.href.startsWith('#')).length, 11, 'Expected three apps, four work/docs links and four social/workshop links.');
+        assert.equal(links.filter(link => !link.href.startsWith('#')).length, 14, 'Expected three Live and three Repo links, four work/docs links and four social/workshop links.');
+        assert.equal(await page.locator('.btn-live').count(), 3);
+        assert.equal(await page.locator('.btn-repo').count(), 3);
         for (const link of links) {
           if (link.href.startsWith('#')) {
             assert(!link.target || link.target === '_self', `Section navigation must stay local: ${link.href}`);
@@ -146,7 +149,7 @@ try {
             assert.deepEqual(new Set((link.rel || '').split(/\s+/)), new Set(['noopener', 'noreferrer']), `Unsafe new-tab link: ${link.href}`);
           }
         }
-        report.linkChecks.push({ route: routePath, width, newTabLinks: 11, sectionLinksStayLocal: true, sharedProfile: true });
+        report.linkChecks.push({ route: routePath, width, newTabLinks: 14, sectionLinksStayLocal: true, sharedProfile: true });
         const favicon = page.locator('link[rel="icon"]');
         assert.equal(await favicon.count(), 1);
         assert.equal(await favicon.getAttribute('type'), 'image/svg+xml');
@@ -181,17 +184,18 @@ try {
     const height = width === 1280 ? 900 : 812;
     await tripPage.setViewportSize({ width, height });
     await tripPage.goto('https://public.audit.invalid/trip-planner/');
-    for (const [modalId, trigger, field] of [['newPlanModal', 'newPlanBtn', 'inputPlanTitle'], ['addStopModal', 'addStopBtn', 'inputStopName']]) {
+    for (const [modalId, open, field] of [['libraryDlg', ['libraryBtn'], 'newTripBtn'], ['newTripDlg', ['libraryBtn', 'newTripBtn'], 'ntTitle']]) {
       const modal = tripPage.locator(`#${modalId}`);
-      await tripPage.locator(`#${trigger}`).click();
+      for (const trigger of open) await tripPage.locator(`#${trigger}`).click();
       await modal.waitFor({ state: 'visible' });
-      const bounds = await modal.locator('.modal-dialog').boundingBox();
+      const bounds = await modal.boundingBox();
       assert(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width + 1 && bounds.y + bounds.height <= height + 1, `${modalId} escaped ${width}x${height}.`);
-      assert(await tripPage.locator(`#${field}`).isVisible(), `${modalId} form is not visible at ${width}px.`);
-      await modal.getByRole('button', { name: 'Cancel', exact: true }).click();
+      assert(await tripPage.locator(`#${field}`).isVisible(), `${modalId} content is not visible at ${width}px.`);
+      await tripPage.keyboard.press('Escape');
+      await tripPage.keyboard.press('Escape');
       await modal.waitFor({ state: 'hidden' });
     }
-    report.interactions.push(`Trip Planner New Plan and Add Stop modals open, close, and stay within ${width}x${height}.`);
+    report.interactions.push(`Trip Planner My trips and New trip dialogs open, close, and stay within ${width}x${height}.`);
   }
   await tripPage.close();
   for (const mode of ['ordinary', 'sdk-only', 'launch']) {
@@ -233,7 +237,7 @@ try {
       }
     }
     await navPage.close();
-    report.interactions.push(`No private address or navigation in ${mode} mode at 320, 375, and 1280px; section anchors stay local; ${mode === 'launch' ? 'all eleven public links call Telegram openLink' : 'all eleven app, work/docs and social links open tabs without an opener'}.`);
+    report.interactions.push(`No private address or navigation in ${mode} mode at 320, 375, and 1280px; section anchors stay local; ${mode === 'launch' ? 'all fourteen public links call Telegram openLink' : 'all fourteen app, source, work/docs and social links open tabs without an opener'}.`);
   }
   const noJsContext = await browser.newContext({ offline: true, javaScriptEnabled: false, serviceWorkers: 'block' });
   try {

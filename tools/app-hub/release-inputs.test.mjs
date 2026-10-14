@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { cardHtml, cardsHtml, MAX_CARDS, renderCards, safeHref } from './assets/app-cards.mjs';
+import { cardHtml, cardsHtml, MAX_CARDS, renderCards, safeHref, safeRepo } from './assets/app-cards.mjs';
 import { publicCards, scan, sharedUiAssets, sharedUiSources, validatePublicCatalog } from './release-inputs.mjs';
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
@@ -86,7 +86,19 @@ test('app cards escape hostile text instead of rendering markup', () => {
   const html = cardHtml({ ...goodCard, title: '<img src=x onerror=alert(1)>', description: '"><script>alert(1)</script>', category: "x' onmouseover='y", privacy: '&<>' });
   assert.doesNotMatch(html, /<img|<script|' onmouseover/);
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
-  assert.match(html, /aria-label="Open project: &lt;img/);
+  assert.match(html, /aria-label="Open &lt;img/);
+});
+test('app rows carry a Live button and a Repo button into the public repository', () => {
+  const repo = 'https://github.com/tara-assistant/workshop-public/tree/main/tools/trip-planner';
+  const html = cardHtml({ ...goodCard, repo });
+  assert.match(html, /class="btn-live"[^>]*href="\/example\/"/);
+  assert.match(html, new RegExp(`class="btn-repo"[^>]*href="${repo}"`));
+  assert.doesNotMatch(cardHtml(goodCard), /btn-repo/);
+  for (const bad of ['javascript:alert(1)', 'https://example.com/x', 'http://github.com/tara-assistant/workshop-public/tree/main/x', 'https://github.com/other/workshop-public/tree/main/x', repo + '/../..', repo + '?a=1']) {
+    assert.throws(() => safeRepo(bad), bad);
+    assert.throws(() => cardHtml({ ...goodCard, repo: bad }), bad);
+  }
+  assert(publicCards(catalog).every(card => card.repo.startsWith('https://github.com/tara-assistant/workshop-public/tree/main/')));
 });
 test('app card links accept only same-site routes', () => {
   for (const href of ['javascript:alert(1)', 'https://example.com/', '//example.com/', '/../x/', '/x', '/x/?a=1', '/X/', ' /x/', 'data:text/html,x']) {
