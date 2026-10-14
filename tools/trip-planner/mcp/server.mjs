@@ -183,7 +183,8 @@ export async function main() {
     try { http = await startHttp(store, port, log); }
     catch (error) { log('HTTP could not start: ' + error.message + '. MCP remains available. Set TRIP_MCP_PORT to a free port.'); }
   }
-  const input = createInterface({ input: process.stdin, crlfDelay: Infinity });
+  const MAX_LINE = 2_000_000;
+  const MAX_ACTIVE = 8;
   const active = new Set();
   const send = (message) => process.stdout.write(JSON.stringify(message) + '\n');
   const rpcError = (id, code, message) => send({ jsonrpc: '2.0', id, error: { code, message } });
@@ -224,14 +225,44 @@ export async function main() {
     }
     send({ jsonrpc: '2.0', id, result });
   };
-  input.on('line', (line) => {
+  const feed = (line) => {
     if (!line.trim()) return;
+    if (line.length > MAX_LINE) { rpcError(null, -32600, 'Message too large. Send one JSON object per line, under 2 MB.'); return; }
+    if (active.size >= MAX_ACTIVE) {
+      let id = null;
+      try { id = JSON.parse(line)?.id ?? null; } catch { id = null; }
+      rpcError(typeof id === 'string' || typeof id === 'number' ? id : null, -32000, 'Server busy. Retry shortly.');
+      return;
+    }
     const task = dispatch(line).catch((error) => log('MCP: ' + error.message));
     active.add(task);
     task.finally(() => active.delete(task));
+  };
+  // Lines are split by hand so a message with no newline cannot grow without limit.
+  let buffer = '';
+  let skipping = false;
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (chunk) => {
+    buffer += chunk;
+    let index;
+    while ((index = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, index);
+      buffer = buffer.slice(index + 1);
+      if (skipping) { skipping = false; continue; }
+      feed(line);
+    }
+    if (buffer.length > MAX_LINE) {
+      buffer = '';
+      skipping = true;
+      rpcError(null, -32600, 'Message too large. Send one JSON object per line, under 2 MB.');
+    }
   });
   const close = () => { store.close(); http?.close(); };
-  input.on('close', async () => { await Promise.allSettled([...active]); close(); });
+  process.stdin.on('end', async () => {
+    if (buffer.trim() && !skipping) feed(buffer);
+    await Promise.allSettled([...active]);
+    close();
+  });
   process.once('SIGINT', () => { close(); process.exit(0); });
   process.once('SIGTERM', () => { close(); process.exit(0); });
   process.stdout.on('error', () => { close(); process.exit(0); });

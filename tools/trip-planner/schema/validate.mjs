@@ -31,7 +31,8 @@ function check(root, schema, value, path, errors) {
     if (schema.maxLength != null && value.length > schema.maxLength) fail(`is longer than ${schema.maxLength} characters`);
     if (schema.pattern && !new RegExp(schema.pattern).test(value)) fail('has the wrong format');
     if (schema.format === 'date') {
-      const ok = /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value + 'T00:00:00Z'));
+      const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value + 'T00:00:00Z') : null;
+      const ok = parsed !== null && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
       if (!ok) fail('must be a date like 2026-06-05');
     }
   }

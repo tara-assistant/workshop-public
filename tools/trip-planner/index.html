@@ -40,10 +40,10 @@
           </div>
           <div class="map-caption" id="mapCaption"></div>
         </div>
-        <p class="credits">Map data © OpenStreetMap contributors, OpenFreeMap. Weather by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (CC BY 4.0, non-commercial use).</p>
       </aside>
     </div>
   </main>
+  <footer class="credits site-credits">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL), tiles by OpenFreeMap. Routes by FOSSGIS OSRM (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">fix the map</a>). Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (<a href="https://open-meteo.com/en/license" target="_blank" rel="noopener noreferrer">CC BY 4.0, non-commercial use</a>).</footer>
 
   <dialog id="libraryDlg" aria-labelledby="libraryTitle">
     <form method="dialog" class="dlg-head"><h2 id="libraryTitle">My trips</h2><button class="icon-btn" aria-label="Close">×</button></form>
@@ -73,7 +73,8 @@
   <dialog id="stopDlg" aria-labelledby="stopTitle">
     <form id="stopForm" class="dlg-form" method="dialog">
       <div class="dlg-head"><h2 id="stopTitle">Stop</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
-      <label>Search a place<input id="sfSearch" type="search" autocomplete="off" placeholder="Type a place, then pick a result"></label>
+      <label>Search a place<input id="sfSearch" type="search" autocomplete="off" placeholder="Type a place, then press Search"></label>
+      <button class="btn" id="sfGo" type="button">Search</button>
       <ul class="results" id="sfResults" role="listbox" aria-label="Place results"></ul>
       <p class="hint" id="sfPickHint">Or tap Pick on map, then tap the map.</p>
       <div class="row"><button class="btn" id="sfPick" type="button">Pick on map</button></div>

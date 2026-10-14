@@ -35,6 +35,7 @@ a{color:var(--leaf)}
 .map-caption{position:absolute;z-index:3;left:var(--s2);bottom:var(--s2);max-width:calc(100% - 120px);padding:5px var(--s2);border-radius:var(--r-sm);background:rgba(255,254,250,.92);font-size:11px;color:var(--muted);pointer-events:none}
 .map-caption:empty{display:none}
 .credits{margin:var(--s2) 0 0;font-size:11px;color:var(--muted)}
+.site-credits{padding:8px 16px 24px;line-height:1.5}
 .maplibregl-ctrl-attrib{font-size:10px!important}
 .maplibregl-ctrl-group button{min-width:36px!important;min-height:36px!important}
 

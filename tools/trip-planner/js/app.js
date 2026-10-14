@@ -478,7 +478,7 @@ function openStopDialog(dayNumber, stopId) {
   $('stopDlg').showModal();
 }
 
-const runSearch = debounce(async () => {
+async function runSearch() {
   const q = $('sfSearch').value;
   const box = $('sfResults');
   if (q.trim().length < 3) { box.replaceChildren(); return; }
@@ -497,7 +497,7 @@ const runSearch = debounce(async () => {
   } catch {
     box.replaceChildren(h('li', {}, h('button', { type: 'button', disabled: true, text: 'Search is unavailable right now. You can still type coordinates or pick on the map.' })));
   }
-}, 700);
+}
 
 function submitStop(e) {
   e.preventDefault();
@@ -676,11 +676,29 @@ async function packShare(trip) {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+const MAX_PLAN_BYTES = 2_000_000;
+
+// Reads a stream but stops as soon as it passes the limit, so a small link cannot expand into a huge one.
+async function readCapped(stream, limit = MAX_PLAN_BYTES) {
+  const reader = stream.getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > limit) { await reader.cancel().catch(() => {}); throw new Error('The trip is larger than 2 MB.'); }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(await new Blob(chunks).arrayBuffer());
+}
+
 async function unpackShare(code) {
+  if (code.length > 1_000_000) throw new Error('The share link is too long.');
   const bin = atob(code.replace(/-/g, '+').replace(/_/g, '/'));
   const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return new Response(stream).text();
+  return readCapped(stream);
 }
 
 async function loadFromUrlParams() {
@@ -693,9 +711,14 @@ async function loadFromUrlParams() {
     else if (remote) {
       const u = safeUrl(remote);
       if (!u || !u.startsWith('https:')) throw new Error('The plan link must start with https://');
-      const res = await fetch(u, { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error('The plan link did not load (HTTP ' + res.status + ').');
-      text = await res.text();
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 15000);
+      try {
+        const res = await fetch(u, { headers: { Accept: 'application/json' }, signal: ctl.signal, credentials: 'omit' });
+        if (!res.ok) throw new Error('The plan link did not load (HTTP ' + res.status + ').');
+        if (Number(res.headers.get('content-length')) > MAX_PLAN_BYTES) throw new Error('The trip is larger than 2 MB.');
+        text = res.body ? await readCapped(res.body) : '';
+      } finally { clearTimeout(timer); }
     } else return;
   } catch (e) { notice('Could not open the shared trip. ' + e.message); return; }
   const result = store.importText(text);
@@ -754,7 +777,9 @@ function wire() {
   $('stopForm').addEventListener('submit', submitStop);
   $('dayForm').addEventListener('submit', submitDay);
   $('dfDelete').onclick = deleteDay;
-  $('sfSearch').addEventListener('input', runSearch);
+  // Public Nominatim forbids search-as-you-type, so a search runs only on Enter or the Search button.
+  $('sfSearch').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); runSearch(); } });
+  $('sfGo').onclick = runSearch;
   $('sfPick').onclick = () => {
     ui.picking = true;
     document.body.classList.add('picking');

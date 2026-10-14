@@ -14,18 +14,20 @@ export const providers = {
 };
 
 const cache = new Map();
-let lastCall = 0;
-let chain = Promise.resolve();
+const lanes = new Map();
 
-// Serialises calls to a host that allows about one request per second.
-function throttled(fn, gap = 1100) {
-  const run = chain.then(async () => {
-    const wait = Math.max(0, lastCall + gap - Date.now());
+// Queues calls per provider lane. Search and routes wait about a second between calls;
+// weather and elevation wait a quarter of a second, far below the Open-Meteo limits.
+function throttled(fn, gap = 1100, lane = 'osm') {
+  const state = lanes.get(lane) || { last: 0, chain: Promise.resolve() };
+  lanes.set(lane, state);
+  const run = state.chain.then(async () => {
+    const wait = Math.max(0, state.last + gap - Date.now());
     if (wait) await new Promise((r) => setTimeout(r, wait));
-    lastCall = Date.now();
+    state.last = Date.now();
     return fn();
   });
-  chain = run.catch(() => {});
+  state.chain = run.catch(() => {});
   return run;
 }
 
@@ -90,7 +92,7 @@ export async function weather(lat, lon, iso, { signal } = {}) {
   const daily = 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset';
   if (lead >= -1 && lead <= 14) {
     const url = `${providers.forecast}?latitude=${lat}&longitude=${lon}&daily=${daily}&timezone=auto&start_date=${iso}&end_date=${iso}`;
-    const j = await getJson(url, signal);
+    const j = await throttled(() => getJson(url, signal), 250, 'meteo');
     const d = j.daily;
     if (d?.time?.length) {
       out = {
@@ -103,7 +105,7 @@ export async function weather(lat, lon, iso, { signal } = {}) {
     const rows = [];
     for (let y = -1; y >= -5; y--) {
       const dd = day(iso, y);
-      rows.push(getJson(`${providers.archive}?latitude=${lat}&longitude=${lon}&start_date=${day(dd, 0)}&end_date=${day(dd, 0)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset&timezone=auto`, signal).catch(() => null));
+      rows.push(throttled(() => getJson(`${providers.archive}?latitude=${lat}&longitude=${lon}&start_date=${day(dd, 0)}&end_date=${day(dd, 0)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset&timezone=auto`, signal), 250, 'meteo').catch(() => null));
     }
     const got = (await Promise.all(rows)).map((j) => j?.daily).filter((d) => d?.time?.length);
     if (got.length) {
@@ -130,7 +132,7 @@ export async function elevations(points, { signal } = {}) {
     const lat = set.map((p) => p[1].toFixed(5)).join(',');
     const lon = set.map((p) => p[0].toFixed(5)).join(',');
     const key = `ele|${lat}|${lon}`;
-    if (!cache.has(key)) cache.set(key, (await getJson(`${providers.elevation}?latitude=${lat}&longitude=${lon}`, signal)).elevation || []);
+    if (!cache.has(key)) cache.set(key, (await throttled(() => getJson(`${providers.elevation}?latitude=${lat}&longitude=${lon}`, signal), 250, 'meteo')).elevation || []);
     out.push(...cache.get(key));
   }
   return out;

@@ -81,7 +81,9 @@ export class TripStore extends EventEmitter {
 
   async get(id) {
     try {
-      const trip = JSON.parse(await readFile(await this.safePath(id), 'utf8'));
+      const file = await this.safePath(id);
+      if ((await stat(file)).size > 2_000_000) throw new TripError('Trip file is larger than 2 MB: ' + id);
+      const trip = JSON.parse(await readFile(file, 'utf8'));
       if (!trip || trip.id !== id) throw new TripError('Trip id does not match its filename.');
       return trip;
     } catch (error) {
