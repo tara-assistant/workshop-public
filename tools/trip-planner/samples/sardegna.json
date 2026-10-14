@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "id": "sardegna-summer",
+  "title": "Sardegna: coasts, islands and Cagliari",
+  "destination": "Sardegna, Italy",
+  "startDate": "2026-06-05",
+  "endDate": "2026-06-15",
+  "summary": "12 day plans over 11 dates, in three bases: the wild east coast, the northeast islands and Cagliari with its southern beaches.",
+  "note": "This plan was tested and done by Jihad for his summer trip.",
+  "center": [9.2, 39.8],
+  "zoom": 7,
+  "theme": { "phases": ["#1B4965", "#7B2D8E", "#B44215"] },
+  "phases": [
+    {
+      "id": "p1",
+      "title": "Ogliastra",
+      "subtitle": "Wild east coast. Hotel Orri, Tortolì, 3 nights.",
+      "colorKey": 1,
+      "days": [
+        {
+          "dayNumber": 1,
+          "date": "2026-06-05",
+          "title": "Arrival and Arbatax sunset",
+          "mode": "driving",
+          "stops": [
+            { "id": "1a", "name": "Hotel Orri: check in", "type": "lodging", "time": "16:00", "dwell": 30, "lat": 39.9252, "lon": 9.6663, "tags": [], "desc": "Drop bags, head out. Rooftop bar for sunset.", "links": [{ "kind": "web", "label": "Website", "url": "http://www.hotelorri.it/" }], "visited": false },
+            { "id": "1b", "name": "Rocce Rosse, Arbatax", "type": "gem", "time": "17:00", "dwell": 45, "lat": 39.9392, "lon": 9.7095, "tags": ["gem"], "desc": "10 min. Red porphyry rocks at the harbour. Free. Golden hour. Sneakers for scrambling.", "links": [], "visited": false },
+            { "id": "1c", "name": "Santa Maria Navarrese", "type": "dining", "time": "18:30", "dwell": 60, "lat": 39.9883, "lon": 9.6862, "tags": ["food"], "desc": "Optional. Fishing village. 1000-year-old olive tree. Sunset aperitivo. Scout the Day 3 boat port.", "links": [], "visited": false }
+          ],
+          "tips": ["Easy evening, you have just arrived."],
+          "food": "Tortolì: culurgiones (stuffed pasta), porceddu (suckling pig). Ask the hotel.",
+          "bookings": [],
+          "packing": []
+        },
+        {
+          "dayNumber": 2,
+          "date": "2026-06-06",
+          "title": "Pedra Longa and Selvaggio Blu hike",
+          "mode": "driving",
+          "stops": [
+            { "id": "2a", "name": "Pedra Longa", "type": "gem", "time": "08:00", "dwell": 30, "lat": 40.0277, "lon": 9.7071, "tags": ["swim", "gem"], "desc": "30 min. 128 m sea stack. Swim or snorkel at the base. Cliff jumping. Restaurant at the top.", "links": [], "visited": false },
+            { "id": "2b", "name": "Selvaggio Blu hike", "type": "hike", "time": "09:30", "dwell": 120, "lat": 40.0281, "lon": 9.7054, "tags": ["hike"], "desc": "Italy's most famous coastal trail. The first 2 to 3 km are jaw-dropping. Turn back at any point. The full trail is a technical expedition, so do only the introductory section.", "links": [{ "kind": "hike", "label": "Komoot", "url": "https://www.komoot.com/highlight/280266" }], "visited": false },
+            { "id": "2c", "name": "Gorropu Canyon (alternative)", "type": "hike", "dwell": 180, "lat": 40.1442, "lon": 9.49, "tags": ["hike", "gem", "optional"], "desc": "Europe's deepest gorge, with 500 m limestone walls. 40 min drive from Tortolì, near Urzulei. 2 to 3 h hike along a riverbed between towering cliffs. Full half-day. Choose this or Selvaggio Blu, not both.", "links": [], "visited": false }
+          ],
+          "tips": ["Start early: the coast is exposed by noon.", "1.5 L water, sun protection, proper shoes.", "Optional alternative: Gorropu Canyon, a full half-day canyon walk instead of the coastal trail."],
+          "food": "Pedra Longa restaurant after the hike, with an extraordinary terrace view.",
+          "bookings": [],
+          "packing": ["1.5 L water", "Sun protection", "Proper shoes"]
+        },
+        {
+          "dayNumber": 3,
+          "date": "2026-06-07",
+          "title": "Boat cruise: Goloritzé, Mariolu and more",
+          "mode": "driving",
+          "stops": [
+            { "id": "3a", "name": "Santa Maria Navarrese port", "type": "boat", "time": "08:30", "dwell": 30, "lat": 39.9883, "lon": 9.6862, "tags": ["book", "boat"], "desc": "Arrive 30 min before. The boat leaves at 9 AM sharp. Max 12 passengers.", "links": [{ "kind": "book", "label": "GetYourGuide", "url": "https://www.getyourguide.com/santa-maria-navarrese-l159484/guided-cruise-to-cala-goloritze-cala-mariolu-cala-gabbiani-and-cala-biriala-t849589/" }], "visited": false },
+            { "id": "3b", "name": "Caves and fjords cruise", "type": "boat", "time": "09:00", "dwell": 90, "lat": 40.05, "lon": 9.7, "tags": ["boat"], "desc": "North along the Baunei coast. Sea caves are reachable only by boat.", "links": [], "visited": false },
+            { "id": "3c", "name": "Cala Goloritzé", "type": "swim", "time": "10:30", "dwell": 30, "lat": 40.1085, "lon": 9.6893, "tags": ["swim"], "desc": "UNESCO site. 30 m visibility. 143 m pinnacle. Swim from the boat.", "links": [], "visited": false },
+            { "id": "3d", "name": "Piscine di Venere", "type": "swim", "time": "11:00", "dwell": 30, "lat": 40.116, "lon": 9.683, "tags": ["swim"], "desc": "Natural turquoise pools. Quick swim.", "links": [], "visited": false },
+            { "id": "3e", "name": "Cala Mariolu", "type": "swim", "time": "11:30", "dwell": 90, "lat": 40.1239, "lon": 9.6758, "tags": ["swim"], "desc": "1.5 h. White pebbles, turquoise water, fish. Water shoes and snorkel.", "links": [], "visited": false },
+            { "id": "3f", "name": "Cala Biriala", "type": "swim", "time": "13:30", "dwell": 90, "lat": 40.1333, "lon": 9.6695, "tags": ["swim"], "desc": "1.5 h. Calm waters. Grotta del Fico is optional, about €10.", "links": [], "visited": false },
+            { "id": "3g", "name": "Cala dei Gabbiani", "type": "swim", "time": "15:30", "dwell": 90, "lat": 40.1438, "lon": 9.6563, "tags": ["swim"], "desc": "1.5 h. Wild and remote. Last stop.", "links": [], "visited": false },
+            { "id": "3h", "name": "Return to port", "type": "boat", "time": "17:00", "dwell": 0, "lat": 39.9883, "lon": 9.6862, "tags": [], "desc": "Back around 5 PM.", "links": [], "visited": false }
+          ],
+          "tips": ["Pack snacks or lunch.", "Snorkel gear, water shoes, sunscreen."],
+          "food": "Big seafood dinner.",
+          "bookings": [{ "label": "Guided cruise", "url": "https://www.getyourguide.com/santa-maria-navarrese-l159484/guided-cruise-to-cala-goloritze-cala-mariolu-cala-gabbiani-and-cala-biriala-t849589/" }],
+          "packing": ["Snorkel gear", "Water shoes", "Sunscreen", "Snacks or lunch"]
+        },
+        {
+          "dayNumber": 4,
+          "date": "2026-06-08",
+          "title": "Ghost village, then Budoni",
+          "mode": "driving",
+          "stops": [
+            { "id": "4a", "name": "Gairo Vecchio", "type": "gem", "time": "07:30", "dwell": 60, "lat": 39.8481, "lon": 9.4989, "tags": ["hike", "gem"], "desc": "45 min south. Ruins and fig trees, abandoned in 1951. SS198 from Gairo Sant'Elena. Free. Check safe public access to the ruins.", "links": [], "visited": false },
+            { "id": "4b", "name": "Castello della Fava, Posada", "type": "sight", "time": "10:30", "dwell": 60, "lat": 40.6381, "lon": 9.7239, "tags": ["culture", "food"], "desc": "Hilltop castle. €4. Charming village below.", "links": [], "visited": false },
+            { "id": "4c", "name": "Hotel Castello, Budoni", "type": "lodging", "time": "14:00", "dwell": 30, "lat": 40.7396, "lon": 9.691, "tags": [], "desc": "Pool and sea views.", "links": [{ "kind": "web", "label": "Website", "url": "http://www.castellobudoni.com/" }], "visited": false }
+          ],
+          "tips": ["Check out of Hotel Orri by 11 AM.", "About 2.5 h of driving in total."],
+          "food": "Posada: pane frattau.",
+          "bookings": [],
+          "packing": ["Check-out complete", "Fuel and parking plan"]
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "title": "Northeast",
+      "subtitle": "Islands and wild beaches. Hotel Castello, Budoni, 3 nights.",
+      "colorKey": 2,
+      "days": [
+        {
+          "dayNumber": 5,
+          "date": "2026-06-08",
+          "title": "La Cinta beach (afternoon)",
+          "mode": "driving",
+          "stops": [
+            { "id": "5a", "name": "La Cinta Beach", "type": "swim", "time": "16:00", "dwell": 150, "lat": 40.7852, "lon": 9.671, "tags": ["swim"], "desc": "15 min. Huge white sand beach. Walk south. €1.50 per hour parking.", "links": [], "visited": false }
+          ],
+          "tips": ["Easy afternoon."],
+          "food": "San Teodoro harbour for fish.",
+          "bookings": [],
+          "packing": []
+        },
+        {
+          "dayNumber": 6,
+          "date": "2026-06-09",
+          "title": "Hidden beaches and Tavolara views",
+          "mode": "driving",
+          "stops": [
+            { "id": "6a", "name": "Spiaggia delle Vacche", "type": "swim", "time": "08:00", "dwell": 150, "lat": 40.8583, "lon": 9.6735, "tags": ["swim", "hike", "gem"], "desc": "Rough road. Go before 10 AM. Hidden coves past the main beach. No facilities.", "links": [], "visited": false },
+            { "id": "6b", "name": "Capo Coda Cavallo", "type": "swim", "time": "11:30", "dwell": 90, "lat": 40.8408, "lon": 9.7234, "tags": ["swim"], "desc": "Tavolara across the strait. Snorkeling. Free parking.", "links": [], "visited": false },
+            { "id": "6c", "name": "Sa Curcurica Lagoon (add-on)", "type": "gem", "dwell": 60, "lat": 40.3741, "lon": 9.7089, "tags": ["gem", "optional"], "desc": "Coastal lagoon near Orosei, 30 min south of Budoni. Flamingos, herons and other birdlife. Nice for an early morning walk or a sunset detour. Free, open access.", "links": [], "visited": false }
+          ],
+          "tips": ["Rough roads mean fewer people.", "Optional: Sa Curcurica lagoon near Orosei, good early morning or at sunset."],
+          "food": "Pack a picnic.",
+          "bookings": [],
+          "packing": ["Picnic", "Water shoes"]
+        },
+        {
+          "dayNumber": 7,
+          "date": "2026-06-10",
+          "title": "La Maddalena archipelago",
+          "mode": "driving",
+          "stops": [
+            { "id": "7a", "name": "Drive to Palau", "type": "transport", "time": "06:30", "dwell": 100, "lat": 41.1808, "lon": 9.3854, "tags": [], "desc": "1 h 40. Leave early. Port parking about €10.", "links": [], "visited": false },
+            { "id": "7b", "name": "Palau port check-in", "type": "boat", "time": "09:15", "dwell": 45, "lat": 41.1808, "lon": 9.3854, "tags": ["book", "boat"], "desc": "€5 landing tax, cash.", "links": [{ "kind": "book", "label": "GetYourGuide", "url": "https://www.getyourguide.com/sardinia-l249/from-sardinia-la-maddalena-archipelago-full-day-boat-tour-t397679/" }], "visited": false },
+            { "id": "7c", "name": "Isola di Santa Maria", "type": "swim", "time": "10:00", "dwell": 60, "lat": 41.2939, "lon": 9.4254, "tags": ["swim"], "desc": "Turquoise shallows.", "links": [], "visited": false },
+            { "id": "7d", "name": "Budelli natural pools", "type": "swim", "time": "11:30", "dwell": 90, "lat": 41.2836, "lon": 9.3706, "tags": ["swim"], "desc": "Pink Beach seen from the boat. Swim at the pools. The highlight of the day.", "links": [], "visited": false },
+            { "id": "7e", "name": "Spargi: Cala Granara", "type": "swim", "time": "13:00", "dwell": 90, "lat": 41.2469, "lon": 9.3476, "tags": ["swim"], "desc": "White sand, calm snorkeling.", "links": [], "visited": false },
+            { "id": "7f", "name": "La Maddalena town", "type": "dining", "time": "14:30", "dwell": 60, "lat": 41.2114, "lon": 9.4058, "tags": ["food"], "desc": "1 h free time. Harbour, gelato, wine.", "links": [], "visited": false },
+            { "id": "7g", "name": "Return to Budoni", "type": "transport", "time": "17:00", "dwell": 100, "lat": 41.1808, "lon": 9.3854, "tags": [], "desc": "1 h 40 drive back.", "links": [], "visited": false }
+          ],
+          "tips": ["June has fewer boats.", "€5 landing tax, cash."],
+          "food": "Seafood in La Maddalena.",
+          "bookings": [{ "label": "La Maddalena boat tour", "url": "https://www.getyourguide.com/sardinia-l249/from-sardinia-la-maddalena-archipelago-full-day-boat-tour-t397679/" }],
+          "packing": ["Cash for the landing tax", "Swimwear", "Sunscreen"]
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "title": "Cagliari",
+      "subtitle": "City, cliffs and beaches. Cagliari, 4 nights.",
+      "colorKey": 3,
+      "days": [
+        {
+          "dayNumber": 8,
+          "date": "2026-06-11",
+          "title": "City: Castello, market and Poetto",
+          "mode": "walking",
+          "stops": [
+            { "id": "8a", "name": "Castello Quarter", "type": "sight", "time": "10:00", "dwell": 90, "lat": 39.2187, "lon": 9.1169, "tags": ["culture"], "desc": "Medieval heart. Cathedral (free, with crypt). Torre dell'Elefante €3. Wander without rushing.", "links": [], "visited": false },
+            { "id": "8b", "name": "Bastione di Saint Remy", "type": "sight", "time": "11:30", "dwell": 30, "lat": 39.216, "lon": 9.1166, "tags": ["culture"], "desc": "Sweeping views over the rooftops, port and sea. Free.", "links": [], "visited": false },
+            { "id": "8c", "name": "San Benedetto Market", "type": "dining", "time": "12:30", "dwell": 60, "lat": 39.226, "lon": 9.122, "tags": ["food"], "desc": "Seafood, bottarga, oysters on the spot. Mon to Sat 7 AM to 2 PM. Closed Sunday.", "links": [], "visited": false },
+            { "id": "8d", "name": "Sella del Diavolo hike", "type": "hike", "time": "15:00", "dwell": 120, "lat": 39.1881, "lon": 9.165, "tags": ["hike"], "desc": "The Devil's Saddle above Poetto. Trailhead at Calamosca. 40 min up. Panoramic views over the Gulf of Cagliari.", "links": [], "visited": false },
+            { "id": "8e", "name": "Poetto sunset swim", "type": "swim", "time": "17:30", "dwell": 90, "lat": 39.2134, "lon": 9.1757, "tags": ["swim"], "desc": "8 km of white sand. Walk south for space. Bars everywhere. Bus PF or PQ from the centre, 20 min, €1.30.", "links": [], "visited": false }
+          ],
+          "tips": ["Car-free day.", "The market closes at 2 PM.", "Sella del Diavolo hike: bring water and sneakers. See it from above today and from the sea on Day 11."],
+          "food": "Market lunch. Marina dinner: fregola con arselle, bottarga pasta, seadas with honey.",
+          "bookings": [],
+          "packing": ["Water", "Sneakers", "Swimwear"]
+        },
+        {
+          "dayNumber": 9,
+          "date": "2026-06-12",
+          "title": "South: Nora, Tuerredda and Cipolla",
+          "mode": "driving",
+          "stops": [
+            { "id": "9a", "name": "Nora Archaeological Park", "type": "sight", "time": "08:30", "dwell": 60, "lat": 38.9862, "lon": 9.0161, "tags": ["culture"], "desc": "45 min. Phoenician and Roman headland. Mosaics. €10, guided, 1 h.", "links": [{ "kind": "web", "label": "Info", "url": "https://www.fondazionepulacultura.it/" }], "visited": false },
+            { "id": "9b", "name": "Tuerredda", "type": "swim", "time": "10:30", "dwell": 240, "lat": 38.8946, "lon": 8.8131, "tags": ["swim", "book"], "desc": "Book online the day before, by 8 AM (€2). Parking €10. Island to swim to.", "links": [{ "kind": "book", "label": "Book entry", "url": "https://www.tuerredda.com" }], "visited": false },
+            { "id": "9c", "name": "Cala Cipolla", "type": "swim", "time": "14:30", "dwell": 120, "lat": 38.8788, "lon": 8.8542, "tags": ["swim"], "desc": "Intimate cove. The right-hand rocks are best for snorkeling. €8 parking.", "links": [], "visited": false }
+          ],
+          "tips": ["Nora is optional: 1 h, on the route.", "Tuerredda: book the day before by 8 AM.", "The SS195 coast road is stunning."],
+          "food": "Beach picnic or restaurants at Chia.",
+          "bookings": [{ "label": "Tuerredda entry, €2 per person, book the day before", "url": "https://www.tuerredda.com" }],
+          "packing": ["Picnic", "Snorkel", "Cash for parking"]
+        },
+        {
+          "dayNumber": 10,
+          "date": "2026-06-13",
+          "title": "West: Nebida and Porto Pino",
+          "mode": "driving",
+          "stops": [
+            { "id": "10a", "name": "Nebida to Masua hike", "type": "hike", "time": "08:00", "dwell": 90, "lat": 39.3283, "lon": 8.4175, "tags": ["hike"], "desc": "1 h 15 west. Cliff trail, Pan di Zucchero 133 m stack, mining ruins. About 1.5 h.", "links": [{ "kind": "hike", "label": "Komoot", "url": "https://www.komoot.com/highlight/915827" }], "visited": false },
+            { "id": "10b", "name": "Masua Beach", "type": "swim", "time": "11:00", "dwell": 90, "lat": 39.3358, "lon": 8.4087, "tags": ["swim"], "desc": "Swim below the 133 m stack. Porto Flavia is optional, €10, 30 min.", "links": [], "visited": false },
+            { "id": "10c", "name": "Dune di Porto Pino", "type": "swim", "time": "14:00", "dwell": 180, "lat": 38.9467, "lon": 8.6215, "tags": ["swim", "gem"], "desc": "Massive dunes, turquoise water. €8 to €10. Gates close at 7 PM.", "links": [], "visited": false }
+          ],
+          "tips": ["Rugged and cinematic.", "Proper shoes.", "Porto Flavia: a tunnel to a cliff view."],
+          "food": "Masua beach bar. Nebida terraces.",
+          "bookings": [],
+          "packing": ["Proper shoes", "Water", "Swimwear"]
+        },
+        {
+          "dayNumber": 11,
+          "date": "2026-06-14",
+          "title": "East: Sinzias, Porto Giunco and boat tour",
+          "mode": "driving",
+          "stops": [
+            { "id": "11a", "name": "Cala Sinzias", "type": "swim", "time": "08:30", "dwell": 90, "lat": 39.1929, "lon": 9.563, "tags": ["swim"], "desc": "1 h east. Spacious, crystal-clear water. €10 parking.", "links": [], "visited": false },
+            { "id": "11b", "name": "Porto Giunco", "type": "swim", "time": "11:00", "dwell": 120, "lat": 39.111, "lon": 9.5205, "tags": ["swim", "hike"], "desc": "The star of the day. A tower between two bays. Climb for the view and flamingos. €10.", "links": [], "visited": false },
+            { "id": "11c", "name": "Sella del Diavolo boat tour (3 h)", "type": "boat", "time": "15:00", "dwell": 180, "lat": 39.1881, "lon": 9.165, "tags": ["boat", "swim", "book"], "desc": "Back in Cagliari for the afternoon. 4 swim stops in hidden bays, snorkeling inside sea caves, aperitivo on board. Max 12. You hike this headland from above on Day 8 and see it from the sea today.", "links": [{ "kind": "book", "label": "GetYourGuide", "url": "https://www.getyourguide.com/cagliari-l820/cagliari-tour-in-barca-della-sella-del-diavolo-con-il-capitano-sardo-t463218/" }], "visited": false },
+            { "id": "11d", "name": "Farewell dinner", "type": "dining", "time": "19:00", "dwell": 120, "lat": 39.214, "lon": 9.117, "tags": ["food"], "desc": "Last proper evening in Cagliari. Marina district. Make it special.", "links": [], "visited": false }
+          ],
+          "tips": ["Tower hike 15 min, the best photo in the south of Sardegna.", "Leave Porto Giunco by 1:30 PM to be back for the 3 PM boat (about 1 h drive).", "The big finale day: beaches, hike, boat, dinner."],
+          "food": "Villasimius: bottarga pasta for lunch. Farewell dinner in the Marina district.",
+          "bookings": [{ "label": "Sella del Diavolo boat, about €35 to €45", "url": "https://www.getyourguide.com/cagliari-l820/cagliari-tour-in-barca-della-sella-del-diavolo-con-il-capitano-sardo-t463218/" }],
+          "packing": ["Swimwear", "Snorkel", "Towel"]
+        },
+        {
+          "dayNumber": 12,
+          "date": "2026-06-15",
+          "title": "Departure",
+          "mode": "driving",
+          "stops": [
+            { "id": "12a", "name": "Final morning", "type": "swim", "dwell": 90, "lat": 39.2515, "lon": 9.0543, "tags": [], "desc": "Poetto swim or Calamosca (10 min, popular with locals). Airport 15 min.", "links": [], "visited": false }
+          ],
+          "tips": ["Calamosca for a final swim."],
+          "food": "Last coffee. Make it count.",
+          "bookings": [],
+          "packing": []
+        }
+      ]
+    }
+  ]
+}

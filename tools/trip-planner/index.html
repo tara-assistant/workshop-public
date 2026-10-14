@@ -2,305 +2,145 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Trip Planner · 3D Travel Itineraries</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Trip Planner</title>
+  <meta name="description" content="A keyless trip planner. Plan days on an open map, check the weather, and let your own agent edit the trip.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
 </head>
-<body class="mobile-app">
-  <div class="app-layout">
-    <!-- Floating Glass Header (Glassmorphic) -->
-    <header class="floating-header">
-      <div class="nav-left">
-        <button class="btn-pill" id="appSwitcherBtn" title="Tesseract Apps">
-          <span class="icon">⊞</span>
-        </button>
-        <div class="brand-badge">
-          <span class="icon">🧭</span>
-          <span class="text">Trip Planner</span>
-        </div>
-      </div>
-      <div class="nav-right">
-        <select class="trip-picker" id="tripSelect" title="Select Itinerary"></select>
-        <button class="btn-pill btn-accent-terra" id="newPlanBtn">+ New</button>
-      </div>
-    </header>
-
-    <!-- App Switcher Dropdown Overlay -->
-    <div class="app-switcher-overlay" id="appSwitcherOverlay">
-      <div class="app-switcher-card">
-        <div class="switcher-title-row">
-          <span>TESSERACT APPS</span>
-          <button class="close-btn" id="closeSwitcherBtn">×</button>
-        </div>
-        <div class="switcher-list">
-          <div class="switcher-row active" id="openTripPlanner">
-            <span class="item-icon">🧭</span>
-            <div>
-              <strong>Trip Planner</strong>
-              <small>3D routes, hikes & city itineraries</small>
-            </div>
-          </div>
-          <a href="https://0e7393a3.workshop-47y.pages.dev" target="_blank" class="switcher-row">
-            <span class="item-icon">⊞</span>
-            <div>
-              <strong>Apps Launchpad</strong>
-              <small>All registered mobile mini apps</small>
-            </div>
-          </a>
-          <a href="https://d469c729.workshop-47y.pages.dev" target="_blank" class="switcher-row">
-            <span class="item-icon">◈</span>
-            <div>
-              <strong>Field Atlas</strong>
-              <small>Infrastructure diagnostics & map</small>
-            </div>
-          </a>
-          <a href="https://projects.metaengineershub.com/snake/" target="_blank" class="switcher-row">
-            <span class="item-icon">🕹️</span>
-            <div>
-              <strong>Snake Arcade</strong>
-              <small>Retro mobile arcade game</small>
-            </div>
-          </a>
-          <a href="https://projects.metaengineershub.com/tara/" target="_blank" class="switcher-row">
-            <span class="item-icon">✨</span>
-            <div>
-              <strong>Tara Assistant</strong>
-              <small>AI portfolio & system overview</small>
-            </div>
-          </a>
-        </div>
-      </div>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../../" aria-label="Back to the project list"><span class="brand-mark" aria-hidden="true"></span>Trip Planner</a>
+    <div class="topbar-actions">
+      <button class="btn" id="undoBtn" type="button" hidden>Undo</button>
+      <button class="btn btn-primary" id="libraryBtn" type="button">My trips</button>
+      <button class="btn" id="menuBtn" type="button" aria-haspopup="dialog">Share &amp; export</button>
     </div>
+  </header>
 
-    <!-- Map Canvas Viewport -->
-    <div class="map-canvas-container">
-      <div id="map"></div>
+  <div class="notice" id="notice" role="status" hidden></div>
 
-      <!-- Floating Map Layer Controls (Wanderlog / Google Earth style) -->
-      <div class="map-floating-actions">
-        <button class="map-circle-btn active" id="styleDarkBtn" title="Dark 3D Mode">🗺️</button>
-        <button class="map-circle-btn" id="styleSatBtn" title="Satellite Imagery">🛰️</button>
-        <button class="map-circle-btn" id="styleOutdoorsBtn" title="Topographic Trails">🥾</button>
-        <button class="map-circle-btn" id="terrainToggleBtn" title="3D Terrain / Komoot Topography">⛰️</button>
-        <div class="map-btn-divider"></div>
-        <button class="map-circle-btn toggle-3d-btn active" id="pitchToggleBtn" title="Toggle 2D / 3D Mode">
-          <span id="pitchToggleText">3D</span>
-        </button>
-        <button class="map-circle-btn" id="fitRouteBtn" title="Fit Entire Route">⤢</button>
-        <button class="map-circle-btn" id="locateBtn" title="Find My Location">📍</button>
-      </div>
-
-      <!-- Quick Floating Sheet Toggle on Mobile Map View -->
-      <button class="map-sheet-peek-btn" id="mapSheetPeekBtn">
-        <span class="peek-icon">📋</span>
-        <span id="mapSheetPeekText">Itinerary · 5 Stops</span>
-        <span class="peek-arrow">⌃</span>
-      </button>
+  <main id="app" class="app">
+    <section class="hero" id="hero" aria-live="polite"></section>
+    <nav class="phase-nav" id="phaseNav" aria-label="Trip bases"></nav>
+    <div class="layout">
+      <section class="list" id="list" aria-label="Itinerary"></section>
+      <aside class="map-panel" aria-label="Map">
+        <div class="map-frame" id="mapFrame">
+          <div id="map" role="application" aria-label="Trip map"></div>
+          <div class="map-tools" role="group" aria-label="Map layers">
+            <button class="chip" type="button" data-layer="map" aria-pressed="true">Map</button>
+            <button class="chip" type="button" data-layer="topo" aria-pressed="false">Topo</button>
+            <button class="chip" type="button" data-layer="sat" aria-pressed="false">Satellite</button>
+            <button class="chip" type="button" id="tilt" aria-pressed="false">3D</button>
+            <button class="chip" type="button" id="fit">Fit</button>
+          </div>
+          <div class="map-caption" id="mapCaption"></div>
+        </div>
+        <p class="credits">Map data © OpenStreetMap contributors, OpenFreeMap. Weather by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (CC BY 4.0, non-commercial use).</p>
+      </aside>
     </div>
+  </main>
 
-    <!-- Itinerary Bottom Sheet (Mobile Tri-State: Peek / Half / Full) & Desktop Sidebar -->
-    <aside class="itinerary-drawer is-half" id="itineraryPanel">
-      <!-- Interactive Drag / Tap Handle -->
-      <div class="drawer-drag-handle" id="sheetHandle">
-        <div class="drag-pill"></div>
-        <div class="handle-info-bar">
-          <div class="handle-title-group">
-            <span class="handle-plan-title" id="handleTitle">Trip Plan</span>
-            <span class="handle-plan-meta" id="handleMeta">Loading stops...</span>
-          </div>
-          <div class="handle-controls">
-            <button class="sheet-state-pill" id="sheetStateToggle" title="Expand or collapse sheet">⤢ View List</button>
-          </div>
-        </div>
+  <dialog id="libraryDlg" aria-labelledby="libraryTitle">
+    <form method="dialog" class="dlg-head"><h2 id="libraryTitle">My trips</h2><button class="icon-btn" aria-label="Close">×</button></form>
+    <div class="dlg-body">
+      <ul class="trip-list" id="tripList"></ul>
+      <div class="row">
+        <button class="btn btn-primary" id="newTripBtn" type="button">New trip</button>
+        <button class="btn" id="importBtn" type="button">Import JSON or GPX</button>
+        <button class="btn" id="presetBtn" type="button">Restore Sardegna preset</button>
       </div>
-
-      <div class="drawer-scroll-body">
-        <!-- Trip Hero Card -->
-        <div class="trip-hero">
-          <div class="hero-top-row">
-            <span class="hero-category" id="planBadge">Travel Route</span>
-            <span class="hero-region" id="planRegion">Italy</span>
-            <div class="hero-actions">
-              <button class="icon-btn-danger" id="deletePlanBtn" title="Delete Plan">🗑️</button>
-            </div>
-          </div>
-          <h2 class="hero-title" id="planHeading">Itinerary</h2>
-          <p class="hero-desc" id="planSummary">Highlights and trail itinerary.</p>
-
-          <!-- Interactive Progress Ring / Bar -->
-          <div class="hero-progress-section">
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
-            </div>
-            <div class="progress-info-row">
-              <span class="progress-label" id="progressLabel">0 of 0 stops visited (0%)</span>
-              <button class="link-btn-subtle" id="resetCheckboxesBtn" title="Clear checked stops">Clear Checks</button>
-            </div>
-          </div>
-
-          <div class="hero-stats">
-            <div class="stat-cell"><small>STOPS</small><strong id="statStops">0</strong></div>
-            <div class="stat-cell"><small>DISTANCE</small><strong id="statDist">0 km</strong></div>
-            <div class="stat-cell"><small>DURATION</small><strong id="statDuration">Flexible</strong></div>
-          </div>
-
-          <!-- Multi-Day Selector Carousel -->
-          <div class="day-tabs-container">
-            <div class="day-tabs-scroll" id="dayTabsCarousel"></div>
-          </div>
-
-          <!-- Category Filter Chips -->
-          <div class="filter-carousel" id="filterChips">
-            <button class="filter-chip active" data-type="all">All</button>
-            <button class="filter-chip" data-type="gem">💎 Gems</button>
-            <button class="filter-chip" data-type="sight">🏛️ Sights</button>
-            <button class="filter-chip" data-type="hike">🥾 Hikes</button>
-            <button class="filter-chip" data-type="dining">🍷 Food</button>
-            <button class="filter-chip" data-type="cafe">☕ Cafes</button>
-            <button class="filter-chip" data-type="swim">🏖️ Beach</button>
-            <button class="filter-chip" data-type="boat">⛵ Boat</button>
-          </div>
-        </div>
-
-        <!-- Timeline Section -->
-        <div class="timeline-container">
-          <div class="timeline-header">
-            <div class="timeline-heading-group">
-              <h3 id="timelineHeaderTitle">Today's Itinerary</h3>
-              <span class="timeline-meta" id="timelineCount">0 stops</span>
-            </div>
-            <button class="btn-pill btn-accent-cyan" id="addStopBtn">+ Add Stop</button>
-          </div>
-
-          <!-- Stop Cards Feed -->
-          <div class="stops-feed" id="stopsFeed"></div>
-        </div>
-
-        <!-- Trip Settings Footer inside Drawer -->
-        <div class="drawer-footer">
-          <button class="btn-pill btn-outline" id="beamToTaraBtn">Export trip JSON</button>
-          <button class="btn-pill btn-outline" id="resetDefaultsBtn">Reset Demo Plans</button>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Modal: Add Custom Stop -->
-    <div class="modal-overlay" id="addStopModal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <h3>Add Custom Itinerary Stop</h3>
-          <button class="close-btn" id="closeAddStopBtn">×</button>
-        </div>
-        <form class="modal-form" id="addStopForm">
-          <div class="form-group">
-            <label for="inputStopName">Stop Name</label>
-            <input type="text" id="inputStopName" required placeholder="e.g. Viewpoint, Trattoria, Trailhead" />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputStopType">Type</label>
-              <select id="inputStopType">
-                <option value="sight">🏛️ Sight / Culture</option>
-                <option value="gem">💎 Hidden Gem</option>
-                <option value="hike">🥾 Hike / Scenic Trail</option>
-                <option value="dining">🍷 Dining / Dinner</option>
-                <option value="cafe">☕ Cafe / Breakfast</option>
-                <option value="swim">🏖️ Beach / Swimming</option>
-                <option value="boat">⛵ Boat / Water Ferry</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="inputStopTime">Target Time</label>
-              <input type="text" id="inputStopTime" placeholder="e.g. 10:30 AM" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputStopLat">Latitude</label>
-              <input type="number" step="any" id="inputStopLat" required placeholder="45.4642" />
-            </div>
-            <div class="form-group">
-              <label for="inputStopLng">Longitude</label>
-              <input type="number" step="any" id="inputStopLng" required placeholder="9.1900" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="inputStopWhy">Why Visit</label>
-            <textarea id="inputStopWhy" rows="2" placeholder="What makes this stop memorable?"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="inputStopTips">Practical Tips</label>
-            <input type="text" id="inputStopTips" placeholder="Parking, entrance tips, best time to arrive" />
-          </div>
-          <div class="form-group">
-            <label for="inputStopFood">Local Specialty</label>
-            <input type="text" id="inputStopFood" placeholder="Dish, wine, or drink recommendation" />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-pill" id="cancelStopBtn">Cancel</button>
-            <button type="submit" class="btn-pill btn-accent-cyan">Add to Itinerary</button>
-          </div>
-        </form>
-      </div>
+      <input type="file" id="fileInput" accept=".json,.gpx,application/json,application/gpx+xml" hidden>
+      <p class="hint">Trips are saved in this browser only. Export a trip to keep a copy or hand it to an agent.</p>
+      <p class="error" id="importError" role="alert" hidden></p>
     </div>
+  </dialog>
 
-    <!-- Modal: New Plan -->
-    <div class="modal-overlay" id="newPlanModal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <h3>Create New Trip Plan</h3>
-          <button class="close-btn" id="closeNewPlanBtn">×</button>
-        </div>
-        <form class="modal-form" id="newPlanForm">
-          <div class="form-group">
-            <label for="inputPlanTitle">Trip Name</label>
-            <input type="text" id="inputPlanTitle" required placeholder="e.g. Amalfi Coast Explorer" />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputPlanRegion">Region / City</label>
-              <input type="text" id="inputPlanRegion" required placeholder="e.g. Campania, Italy" />
-            </div>
-            <div class="form-group">
-              <label for="inputPlanCategory">Trip Style</label>
-              <select id="inputPlanCategory">
-                <option value="Scenic Coastal Road">Scenic Coastal Road</option>
-                <option value="Mountain Hike">Mountain Hike & Ridge</option>
-                <option value="Historic City Walk">Historic City Walk</option>
-                <option value="Culinary & Wine Tour">Culinary & Wine Tour</option>
-                <option value="Hidden Gems">Hidden Gems Expedition</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="inputPlanDesc">Trip Description</label>
-            <textarea id="inputPlanDesc" rows="3" placeholder="Brief outline of this journey..."></textarea>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputPlanLat">Starting Latitude</label>
-              <input type="number" step="any" id="inputPlanLat" required placeholder="40.6333" />
-            </div>
-            <div class="form-group">
-              <label for="inputPlanLng">Starting Longitude</label>
-              <input type="number" step="any" id="inputPlanLng" required placeholder="14.6029" />
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-pill" id="cancelPlanBtn">Cancel</button>
-            <button type="submit" class="btn-pill btn-accent-terra">Create Trip Plan</button>
-          </div>
-        </form>
+  <dialog id="newTripDlg" aria-labelledby="newTripTitle">
+    <form id="newTripForm" class="dlg-form" method="dialog">
+      <div class="dlg-head"><h2 id="newTripTitle">New trip</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
+      <label>Trip name<input id="ntTitle" required maxlength="160" placeholder="Dolomites in June"></label>
+      <label>Destination<input id="ntDest" maxlength="160" placeholder="Dolomites, Italy"></label>
+      <label>First day<input id="ntDate" type="date"></label>
+      <div class="row"><button class="btn btn-primary" value="ok">Create</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="stopDlg" aria-labelledby="stopTitle">
+    <form id="stopForm" class="dlg-form" method="dialog">
+      <div class="dlg-head"><h2 id="stopTitle">Stop</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
+      <label>Search a place<input id="sfSearch" type="search" autocomplete="off" placeholder="Type a place, then pick a result"></label>
+      <ul class="results" id="sfResults" role="listbox" aria-label="Place results"></ul>
+      <p class="hint" id="sfPickHint">Or tap Pick on map, then tap the map.</p>
+      <div class="row"><button class="btn" id="sfPick" type="button">Pick on map</button></div>
+      <label>Name<input id="sfName" required maxlength="160"></label>
+      <div class="two">
+        <label>Type<select id="sfType"></select></label>
+        <label>Time<input id="sfTime" maxlength="40" placeholder="09:30"></label>
       </div>
+      <div class="two">
+        <label>Latitude<input id="sfLat" type="number" step="any" min="-85" max="85" required></label>
+        <label>Longitude<input id="sfLon" type="number" step="any" min="-180" max="180" required></label>
+      </div>
+      <div class="two">
+        <label>Stay (minutes)<input id="sfDwell" type="number" min="0" max="1440" step="5"></label>
+        <label>Tags<input id="sfTags" placeholder="swim, gem, book"></label>
+      </div>
+      <label>Notes<textarea id="sfDesc" rows="3" maxlength="1200"></textarea></label>
+      <label>Link (https)<input id="sfLink" type="url" placeholder="https://"></label>
+      <label>Link label<input id="sfLinkLabel" maxlength="80" placeholder="Website"></label>
+      <label>Photo of this place (https)<input id="sfImage" type="url" placeholder="https://upload.wikimedia.org/..."></label>
+      <label>Photo credit<input id="sfCredit" maxlength="200" placeholder="Author, licence"></label>
+      <p class="error" id="sfError" role="alert" hidden></p>
+      <div class="row"><button class="btn btn-primary" value="ok">Save stop</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dayDlg" aria-labelledby="dayTitle">
+    <form id="dayForm" class="dlg-form" method="dialog">
+      <div class="dlg-head"><h2 id="dayTitle">Day</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
+      <label>Title<input id="dfTitle" required maxlength="160"></label>
+      <div class="two">
+        <label>Date<input id="dfDate" type="date"></label>
+        <label>Travel mode<select id="dfMode"><option value="walking">Walking</option><option value="cycling">Cycling</option><option value="driving">Driving</option></select></label>
+      </div>
+      <label>Base (phase)<select id="dfPhase"></select></label>
+      <label>Tips, one per line<textarea id="dfTips" rows="3"></textarea></label>
+      <label>Food and drink<input id="dfFood" maxlength="600"></label>
+      <label>Packing, one per line<textarea id="dfPacking" rows="2"></textarea></label>
+      <label>Day photo (https)<input id="dfPhoto" type="url" placeholder="https://upload.wikimedia.org/..."></label>
+      <label>Photo credit<input id="dfCredit" maxlength="200"></label>
+      <div class="row"><button class="btn btn-primary" value="ok">Save day</button><button class="btn btn-danger" id="dfDelete" type="button">Delete day</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="menuDlg" aria-labelledby="menuTitle">
+    <form method="dialog" class="dlg-head"><h2 id="menuTitle">Share &amp; export</h2><button class="icon-btn" aria-label="Close">×</button></form>
+    <div class="dlg-body">
+      <div class="row">
+        <button class="btn" id="exportJson" type="button">Download trip JSON</button>
+        <button class="btn" id="exportGpx" type="button">Download GPX</button>
+        <button class="btn" id="printBtn" type="button">Print</button>
+      </div>
+      <h3>Share by link</h3>
+      <p class="hint">The whole trip is packed into the link. Nothing is uploaded.</p>
+      <div class="row"><button class="btn" id="shareBtn" type="button">Copy share link</button></div>
+      <p class="hint" id="shareInfo" role="status"></p>
+      <h3>Connect your own agent</h3>
+      <p class="hint">An agent can plan for you with the planning skill, or edit this trip live through the local connector. Both are optional. See the project README.</p>
+      <div class="row">
+        <input id="mcpUrl" value="http://127.0.0.1:4789" aria-label="Connector address">
+        <button class="btn" id="mcpConnect" type="button">Connect</button>
+      </div>
+      <p class="hint" id="mcpStatus" role="status"></p>
     </div>
+  </dialog>
 
-    <!-- Toast Notification Overlay -->
-    <div class="toast-container" id="toastContainer"></div>
-  </div>
-
-  <script src="app.js"></script>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
