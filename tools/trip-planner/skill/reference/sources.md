@@ -1,0 +1,26 @@
+# Sources and reuse
+
+Read current provider policies before use. Free access does not imply unlimited requests or permission to reuse every photo. These policy pages were checked on 2026-10-14. Prefer small targeted queries; cache responses and stop after 3 consecutive failures.
+
+| Source | Use and limits | Attribution for reused material |
+| --- | --- | --- |
+| [OpenStreetMap](https://www.openstreetmap.org/copyright) and [Nominatim](https://operations.osmfoundation.org/policies/nominatim/) | OSM places and public access points. Public Nominatim: maximum 1 request/second across the application, valid identifying User-Agent, cached results, no bulk geocoding, autocomplete, systematic area queries or private addresses. Inspect feature type and access; polygon results may be centroids. Data is ODbL, with share-alike obligations for derived databases | `Map data: (c) OpenStreetMap contributors, ODbL 1.0` plus the copyright link |
+| [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API) | Targeted OSM feature queries by tags and small bounding boxes. Public instances have their own capacity limits. Use timeouts, cache, respect rate limits and avoid mass extraction. Results may be stale and area centres are not entrances | `Data: (c) OpenStreetMap contributors, ODbL 1.0` plus the OSM copyright link |
+| [OpenTopoMap](https://github.com/der-stefan/OpenTopoMap/blob/master/README.md) | Terrain and mapped trails for context. Follow current tile policy; do not bulk download tiles. A mapped line does not certify a route's safety or access. Rendered maps use CC BY-SA; respect share-alike when reusing them | `Map data: (c) OpenStreetMap contributors; elevation: SRTM, Sonny; map style: (c) OpenTopoMap (CC BY-SA)` plus [map link](https://opentopomap.org/) and the applicable licence link |
+| [Wikimedia Commons](https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia) | Actual place photos. Inspect each file page, author, licence version and source. Files have different licences; check the individual licence and any other restrictions. Use an HTTPS image file URL, not a thumbnail guessed from a filename | `Photo: <author>, <licence and version>, <licence URL>` in credit; Commons file page in links or tips; state any modifications. Public-domain files: identify author and public-domain status |
+| [Wikipedia](https://en.wikipedia.org/wiki/Wikipedia:Copyrights) | Background and leads to primary sources. Text is generally CC BY-SA 4.0; check page notices. Do not treat article coordinates as a public entrance or assume its images share the text licence | For adapted text: `<article title>, Wikipedia contributors, CC BY-SA 4.0` with article/history and licence links; note modifications and meet share-alike requirements |
+| [Open-Meteo](https://open-meteo.com/en/docs) and [terms](https://open-meteo.com/en/terms) | Point weather forecast and documented historical datasets. Free hosted API is for non-commercial use; limits currently below 10000 calls/day, 5000/hour and 600/minute. Data is CC BY 4.0. Record grid point, retrieval time, forecast dates, timezone and units; climate averages are not forecasts | `Weather data: Open-Meteo, CC BY 4.0` with [provider](https://open-meteo.com/) and [licence](https://creativecommons.org/licenses/by/4.0/) links |
+| Official park, tourism, venue and transport sites | Current access, hours, seasonal rules, sailing schedules, closures and trail difficulty. Publicly readable pages are research sources; their text, photos and data are not automatically openly licensed. Summarize facts and link the source. Reuse protected material only under a stated licence | `Access/conditions: <authority>, <page URL>, checked <YYYY-MM-DD>`; follow any stated dataset licence |
+
+For road estimates, use [OSRM](https://project-osrm.org/docs/v5.24.0/api/) with a supported profile. Public demonstration services have no availability guarantee; do not use a driving result as a hiking or boat route. Attribute the OSM road data, name the routing service, and record the estimate's check date. Add traffic, parking and closure checks separately.
+
+Useful primary Dolomites sources:
+
+- [Val Gardena lifts](https://www.valgardena.it/en/summer-holidays-dolomites/lifts/): current lift status and timetable links.
+- [Braies access](https://www.prags.bz/en): road and parking rules for Lago di Braies.
+- [Auronzo hut](https://rifugioauronzo.it/en/) and [Tre Cime access](https://pass.auronzo.info/): starting point, road and parking information.
+- [Cortina tourism, Lago Sorapis](https://cortina.dolomiti.org/en/escursioni/to-lago-sorapis-en/): official route description, including exposure and equipped sections.
+- [Funes municipality, Santa Maddalena church](https://www.comune.funes.bz.it/it/Chiesa_di_Santa_Maddalena_5): place identity and official map.
+- [South Tyrol mountain weather](https://weather.province.bz.it/en/mountain-weather) and [ARPAV Dolomiti Meteo](https://www.arpa.veneto.it/dati-ambientali/bollettini/meteo/dolomiti): fresh mountain forecasts before hikes.
+
+Keep attribution in the trip's visible credit, links, descriptions or tips, as appropriate. A source link alone is not always sufficient attribution. Do not assume a tourism site's credited photo permits reuse.
