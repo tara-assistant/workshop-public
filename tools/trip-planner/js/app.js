@@ -1,10 +1,11 @@
 // Trip Planner app. Static, keyless. All user text goes in through textContent via h().
 import * as store from './store.js';
-import { h, safeUrl, osmPoint, osmDirections, fmtDay, fmtRange, debounce, TYPE_LABEL, chipLabels, PALETTE, allStops, allDays, progress } from './util.js';
+import { h, safeUrl, stopMapLinks, fmtDay, fmtRange, debounce, TYPE_LABEL, chipLabels, PALETTE, allStops, allDays, progress } from './util.js';
 import { MapView } from './mapview.js';
 import * as geo from './geo.js';
 import { parseGpx, toGpx } from './gpx.js';
 import { defaults, normalizeProviders } from './providers.mjs';
+import { LIVE_TTL, tripDayState } from './live.mjs';
 
 const $ = (id) => document.getElementById(id);
 
@@ -86,7 +87,8 @@ function renderHero(trip) {
   const p = progress(trip);
   const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
   $('hero').replaceChildren(
-    h('h1', { text: trip.title }),
+    h('h1', { text: trip.title, title: trip.title }),
+    liveStrip(trip),
     h('p', { class: 'meta', text: [trip.destination, fmtRange(trip.startDate, trip.endDate), `${allDays(trip).length} days, ${p.total} stops`].filter(Boolean).join(' · ') }),
     trip.summary && h('p', { class: 'summary', text: trip.summary }),
     trip.note && h('p', { class: 'banner', text: trip.note }),
@@ -142,8 +144,7 @@ function renderStop(trip, phase, pi, day, stop, index) {
   const dir = day.mode || 'driving';
   const links = [
     h('button', { type: 'button', text: 'Show on map', onClick: () => selectStop(stop.id, { scroll: false }) }),
-    h('a', { href: osmPoint(stop.lat, stop.lon), target: '_blank', rel: 'noopener noreferrer', text: 'Open map' }),
-    h('a', { href: osmDirections(stop.lat, stop.lon, dir), target: '_blank', rel: 'noopener noreferrer', text: 'Directions' }),
+    ...stopMapLinks(stop.lat, stop.lon, dir, mapsChoice()).map((link) => h('a', { href: link.url, target: '_blank', rel: 'noopener noreferrer', text: link.label })),
     ...(stop.links || []).map((l) => { const u = safeUrl(l.url); return u ? h('a', { href: u, target: '_blank', rel: 'noopener noreferrer', text: l.label || 'Link' }) : null; })
   ];
   const img = safeUrl(stop.imageUrl);
@@ -267,6 +268,7 @@ function renderList(trip) {
     list.append(h('div', { class: 'phase-actions' }, h('button', { class: 'btn btn-small', type: 'button', text: 'Add day to this base', onClick: () => openDayDialog(null, phase.id) })));
   }
   list.append(h('div', { class: 'phase-actions' }, h('button', { class: 'btn btn-small', type: 'button', text: 'Add a base', onClick: addPhase })));
+  list.append($('footerTemplate').content.cloneNode(true));
 }
 
 function mapData(trip) {
@@ -286,7 +288,10 @@ function mapData(trip) {
 function render() {
   const trip = store.active();
   if (!trip) { showEmpty(); return; }
-  const scroller = document.scrollingElement.scrollTop;
+  const focused = document.activeElement;
+  const focusRoot = focused?.closest('[id]');
+  const focusIndex = focusRoot ? [...focusRoot.querySelectorAll('button,input,select,a')].indexOf(focused) : -1;
+  const scroller = $('list').scrollTop;
   renderHero(trip);
   renderPhaseNav(trip);
   renderList(trip);
@@ -295,7 +300,12 @@ function render() {
   mapView?.setData(data);
   mapView?.setTracks(data.tracks);
   mapView?.select(ui.selectedId, { fly: false });
-  document.scrollingElement.scrollTop = scroller;
+  $('list').scrollTop = scroller;
+  if (focused && !focused.isConnected && focusRoot) {
+    const replacement = document.getElementById(focusRoot.id);
+    (focusIndex < 0 ? replacement : replacement?.querySelectorAll('button,input,select,a')[focusIndex])?.focus({ preventScroll: true });
+  }
+  refreshLiveWeather();
   fetchWeatherForOpenDays();
   updateRoute();
   document.title = `${trip.title} · Trip Planner`;
@@ -307,6 +317,7 @@ function showEmpty() {
       h('button', { class: 'btn btn-primary', type: 'button', text: 'New trip', onClick: () => $('newTripDlg').showModal() }),
       h('button', { class: 'btn', type: 'button', text: 'Restore Sardegna preset', onClick: async () => { await store.resetPreset(); render(); } })));
   $('list').replaceChildren();
+  $('list').append($('footerTemplate').content.cloneNode(true));
   $('phaseNav').hidden = true;
   mapView?.setData({ items: [], lines: [] });
 }
@@ -345,7 +356,16 @@ function selectStop(id, { scroll = true } = {}) {
   }
   mapView?.select(id);
   $('mapCaption').textContent = found.stop.name;
-  if (scroll) $('stop-' + id)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (scroll) {
+    scrollListTo($('stop-' + id));
+    $('stop-' + id)?.querySelector('.stop-name')?.focus({ preventScroll: true });
+  }
+}
+
+function scrollListTo(element) {
+  if (!element) return;
+  const list = $('list');
+  list.scrollTo({ top: list.scrollTop + element.getBoundingClientRect().top - list.getBoundingClientRect().top - 12, behavior: 'smooth' });
 }
 
 function toggleVisited(id) {
@@ -404,9 +424,10 @@ function startStopDrag(event, id) {
     else others.at(-1).classList.add('drop-after');
   };
   const scroll = () => {
-    const mapBottom = window.innerWidth < 900 ? $('mapFrame').getBoundingClientRect().bottom : 0;
-    if (y > window.innerHeight - 60) window.scrollBy(0, 14);
-    else if (y < Math.max(100, mapBottom + 35)) window.scrollBy(0, -14);
+    const bounds = $('list').getBoundingClientRect();
+    const edge = Math.min(60, bounds.height / 4);
+    if (y > bounds.bottom - edge) $('list').scrollBy(0, 14);
+    else if (y < bounds.top + edge) $('list').scrollBy(0, -14);
     update();
     frame = requestAnimationFrame(scroll);
   };
@@ -570,6 +591,10 @@ function openStopDialog(dayNumber, stopId) {
   $('sfLinkLabel').value = s?.links?.[0]?.label || '';
   $('sfImage').value = s?.imageUrl || '';
   $('sfCredit').value = s?.imageCredit || '';
+  photoVersion++;
+  $('sfPhotos').replaceChildren();
+  $('sfFindPhoto').disabled = false;
+  $('sfPhotoStatus').textContent = 'Photos from Wikipedia and Wikimedia Commons. Check that the photo shows this stop.';
   $('sfSearch').value = '';
   $('sfResults').replaceChildren();
   $('sfError').hidden = true;
@@ -594,6 +619,36 @@ async function runSearch() {
     if (!rows.length) box.replaceChildren(h('li', {}, h('button', { type: 'button', disabled: true, text: 'No results. Try a different spelling, or pick on the map.' })));
   } catch {
     box.replaceChildren(h('li', {}, h('button', { type: 'button', disabled: true, text: 'Search is unavailable right now. You can still type coordinates or pick on the map.' })));
+  }
+}
+
+let photoVersion = 0;
+async function findPhotos() {
+  const version = ++photoVersion;
+  const identity = () => JSON.stringify([$('sfName').value, $('sfLat').value, $('sfLon').value, providerVersion]);
+  const snapshot = identity();
+  $('sfFindPhoto').disabled = true;
+  $('sfPhotos').replaceChildren();
+  $('sfPhotoStatus').textContent = 'Looking for nearby photos...';
+  try {
+    const rows = await geo.findStopPhoto($('sfName').value.trim(), $('sfLat').value === '' ? NaN : Number($('sfLat').value), $('sfLon').value === '' ? NaN : Number($('sfLon').value));
+    if (version !== photoVersion || !$('stopDlg').open || snapshot !== identity()) return;
+    $('sfPhotos').replaceChildren(...rows.map((row, index) => h('div', { class: 'photo-choice' },
+      h('button', { type: 'button', 'aria-label': `Use photo ${index + 1}`, 'aria-pressed': false, onClick: (event) => {
+        if (snapshot !== identity()) { $('sfPhotoStatus').textContent = 'The stop changed. Find photos again.'; return; }
+        $('sfImage').value = row.imageUrl;
+        $('sfCredit').value = row.imageCredit;
+        $('sfPhotos').querySelectorAll('button').forEach((button) => button.setAttribute('aria-pressed', String(button === event.currentTarget)));
+        $('sfPhotoStatus').textContent = 'Photo selected. Save the stop to keep it.';
+      } }, h('img', { src: row.imageUrl, alt: `Candidate ${index + 1}`, referrerpolicy: 'no-referrer', onError: (event) => { event.target.hidden = true; } })),
+      h('span', { class: 'credit', text: row.imageCredit }),
+      h('a', { href: safeUrl(row.sourceUrl), text: 'Photo source', target: '_blank', rel: 'noopener noreferrer' })
+    )));
+    $('sfPhotoStatus').textContent = rows.length ? 'Choose one photo. Verify the place and credit at its source.' : 'No credited photos found nearby. Paste an image URL instead.';
+  } catch {
+    if (version === photoVersion) $('sfPhotoStatus').textContent = 'Photo search is unavailable. Paste an image URL instead.';
+  } finally {
+    if (version === photoVersion) $('sfFindPhoto').disabled = false;
   }
 }
 
@@ -856,6 +911,8 @@ async function connectMcp() {
 /* ---------- boot ---------- */
 
 const providerFields = [
+  ['wikipedia', 'Wikipedia photo endpoint'],
+  ['commons', 'Wikimedia Commons photo endpoint'],
   ['search', 'Place search (Nominatim endpoint)'],
   ['driving', 'Car routing (OSRM route base)'],
   ['walking', 'Foot routing (OSRM route base)'],
@@ -873,6 +930,8 @@ function fillProviderFields(value) {
 
 function applyProviderSettings(value) {
   geo.configureProviders(value);
+  liveData.clear();
+  livePending.clear();
   providerVersion++;
   wxCache.clear();
   waveCache.clear();
@@ -889,6 +948,7 @@ function setupProviders() {
   $('providerFields').replaceChildren(...providerFields.map(([key, label]) => h('label', { text: label }, h('input', { id: 'provider-' + key, type: 'url', required: true }))));
   $('settingsBtn').onclick = () => {
     fillProviderFields(geo.providers);
+    $('mapsLinks').value = mapsChoice();
     $('providerError').hidden = true;
     $('menuDlg').close();
     $('settingsDlg').showModal();
@@ -903,6 +963,7 @@ function setupProviders() {
         else value[key] = $('provider-' + key).value;
       }
       const next = normalizeProviders(value);
+      localStorage.setItem('tp-maps-links', $('mapsLinks').value);
       localStorage.setItem('tp-providers', JSON.stringify(next));
       applyProviderSettings(next);
       $('settingsDlg').close();
@@ -915,6 +976,8 @@ function setupProviders() {
   $('resetProviders').onclick = () => {
     try {
       localStorage.removeItem('tp-providers');
+      localStorage.removeItem('tp-maps-links');
+      $('mapsLinks').value = 'both';
       applyProviderSettings(defaults);
       fillProviderFields(defaults);
       $('providerError').hidden = true;
@@ -958,7 +1021,14 @@ function toggleGps() {
 function wire() {
   setupProviders();
   $('gps').onclick = toggleGps;
-  document.addEventListener('visibilitychange', () => { if (document.hidden && gpsToken) stopGps('Location tracking stopped while the page was hidden.'); });
+  $('mapSize').onclick = () => {
+    const panel = document.querySelector('.map-panel');
+    const compact = panel.classList.toggle('map-compact');
+    $('mapSize').textContent = compact ? 'Taller map' : 'Smaller map';
+    mapView?.resize();
+  };
+  scheduleLiveRefresh();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveWeather(); if (document.hidden && gpsToken) stopGps('Location tracking stopped while the page was hidden.'); });
   window.addEventListener('pagehide', () => { if (gpsToken) stopGps(); });
   $('libraryBtn').onclick = () => { $('importError').hidden = true; renderLibrary(); $('libraryDlg').showModal(); };
   $('undoBtn').onclick = doUndo;
@@ -982,6 +1052,8 @@ function wire() {
   // Public Nominatim forbids search-as-you-type, so a search runs only on Enter or the Search button.
   $('sfSearch').addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); runSearch(); } });
   $('sfGo').onclick = runSearch;
+  $('sfFindPhoto').onclick = findPhotos;
+  $('stopDlg').addEventListener('close', () => { photoVersion++; });
   $('sfPick').onclick = () => {
     ui.picking = true;
     document.body.classList.add('picking');
@@ -1018,6 +1090,11 @@ async function boot() {
   if (store.storageError) notice(store.storageError);
   mapView = new MapView($('map'), {
     onNotice: notice,
+    onReset: () => {
+      const day = ui.focusDay != null ? findDay(store.active(), ui.focusDay)?.day : null;
+      mapView.reset(day?.stops.map((stop) => stop.id));
+      $('tilt').setAttribute('aria-pressed', 'false');
+    },
     onReady: () => { const d = mapData(store.active() || { phases: [] }); mapView.setData(d); mapView.setTracks(d.tracks); mapView.fit(false); },
     onSelectStop: (id) => selectStop(id),
     onMapClick: (ll) => {
@@ -1031,6 +1108,91 @@ async function boot() {
   });
   mapView.start();
   render();
+}
+
+
+function mapsChoice() {
+  const choice = localStorage.getItem('tp-maps-links');
+  return ['osm', 'google'].includes(choice) ? choice : 'both';
+}
+
+const liveData = new Map(), livePending = new Map();
+let liveTimer;
+function scheduleLiveRefresh() {
+  clearTimeout(liveTimer);
+  if (!document.hidden) liveTimer = setTimeout(async () => {
+    await refreshLiveWeather();
+    scheduleLiveRefresh();
+  }, LIVE_TTL);
+}
+function liveIdentity(trip) {
+  const state = tripDayState(trip);
+  const stop = state.day?.stops[0] || allStops(trip)[0];
+  return { ...state, stop, key: JSON.stringify([providerVersion, trip.id, state.day?.dayNumber, state.day?.date, stop?.lat, stop?.lon]) };
+}
+
+function liveLines(trip) {
+  const state = liveIdentity(trip), value = liveData.get(state.key);
+  const w = value?.current, f = value?.forecast;
+  const n = (number, suffix) => Number.isFinite(number) ? Math.round(number) + suffix : 'unavailable';
+  const current = w ? `Now ${n(w.temperature, ' °C')}, ${w.description.toLowerCase()}, wind ${n(w.wind, ' km/h')}, rain ${n(w.rainChance, '%')}` : 'Current weather unavailable';
+  const forecast = f ? `Day ${state.day.dayNumber}: ${n(f.tMin, ' °C')} to ${n(f.tMax, ' °C')}, rain ${n(f.rainChance, '%')}. ${f.kind === 'forecast' ? 'Forecast' : 'Typical for these dates, not a forecast'}` : 'Trip weather unavailable';
+  const time = value?.updatedAt ? new Date(value.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
+  return { state, first: `${state.label} · ${current}`, second: `${forecast}${time ? ' · Updated ' + time : ''}${value?.stale ? ' · Saved data, offline' : ''}` };
+}
+
+function openLiveDay() {
+  const state = tripDayState(store.active());
+  if (!state.day) return;
+  ui.phase = 'all'; ui.open.add(state.day.dayNumber); ui.focusDay = state.day.dayNumber;
+  render(); fitDay(state.day.dayNumber); scrollListTo($('day-' + state.day.dayNumber));
+}
+
+function liveStrip(trip) {
+  const lines = liveLines(trip);
+  return h('div', { class: 'live-strip', id: 'liveStrip' },
+    h('button', { type: 'button', class: 'live-summary', title: lines.first + '. ' + lines.second, onClick: openLiveDay },
+      h('span', { text: lines.first }), h('span', { text: lines.second })),
+    h('button', { type: 'button', class: 'live-more', 'aria-label': 'Weather details', text: 'More', onClick: () => {
+      const latest = liveLines(store.active());
+      $('liveDetails').replaceChildren(h('p', { text: latest.first }), h('p', { text: latest.second }),
+        h('p', { class: 'hint', text: 'Weather is for the first stop of the relevant day, or the first trip stop. Rain chance uses the current local hour. Typical weather uses past dates and is not a forecast.' }),
+        h('button', { type: 'button', class: 'btn', text: 'Open day', onClick: () => { $('liveDlg').close(); openLiveDay(); } }));
+      $('liveDlg').showModal();
+    } })
+  );
+}
+
+async function refreshLiveWeather() {
+  const trip = store.active();
+  if (!trip || document.hidden) return;
+  const state = liveIdentity(trip);
+  if (!state.stop || livePending.has(state.key)) return;
+  const saved = liveData.get(state.key);
+  if (saved && Date.now() - saved.checkedAt < LIVE_TTL) return;
+  const token = {};
+  livePending.set(state.key, token);
+  const results = await Promise.allSettled([
+    geo.currentWeather(state.stop.lat, state.stop.lon),
+    state.day?.date ? geo.weather(state.stop.lat, state.stop.lon, state.day.date) : Promise.resolve(null)
+  ]);
+  if (livePending.get(state.key) !== token) return;
+  livePending.delete(state.key);
+  const current = results[0].status === 'fulfilled' ? results[0].value : null;
+  const forecast = results[1].status === 'fulfilled' ? results[1].value : null;
+  liveData.set(state.key, { current: current || saved?.current, forecast: forecast || saved?.forecast,
+    checkedAt: Date.now(), updatedAt: current?.fetchedAt || forecast?.fetchedAt || saved?.updatedAt,
+    stale: (!current || !forecast) && !!saved?.updatedAt });
+  if (store.active() && liveIdentity(store.active()).key === state.key) {
+    const lines = liveLines(store.active());
+    const button = $('liveStrip')?.querySelector('.live-summary');
+    if (button) {
+      button.title = lines.first + '. ' + lines.second;
+      button.children[0].textContent = lines.first;
+      button.children[1].textContent = lines.second;
+    }
+  }
+  scheduleLiveRefresh();
 }
 
 boot();

@@ -30,6 +30,8 @@ export const TOOLS = [
     { tripId, stopId: text, patch: object }),
   definition('remove_stop', 'Remove the uniquely identified stop and validate before saving.', { tripId, stopId: text }),
   definition('add_day', 'Append a day to the uniquely identified phase and validate before saving.', { tripId, phaseId: text, day: object }),
+  definition('find_stop_photo', 'Read only. Find up to four nearby Wikipedia and Wikimedia Commons photos with author, license and source. Confirm the actual place, then use update_stop to save imageUrl and imageCredit.',
+    { name: { ...text, maxLength: 160 }, lat: latitude, lon: longitude }),
   definition('search_place', 'Search Nominatim for sourced places. Results may be place centers; check entrances. Limit defaults to 5.',
     { query: { ...text, maxLength: 500 }, limit: { type: 'integer', minimum: 1, maximum: 10 } }, ['query']),
   definition('route_between', 'Request an OSRM route through [longitude, latitude] points. Refuse a different reported mode.',
@@ -76,6 +78,7 @@ export function createToolHandler(store, geo = createGeo()) {
       case 'add_day': return store.edit(args.tripId, (trip) => {
         unique(trip.phases.filter((phase) => phase.id === args.phaseId), 'Phase ' + args.phaseId).days.push(args.day);
       });
+      case 'find_stop_photo': return geo.findStopPhoto(args);
       case 'search_place': return geo.searchPlace(args);
       case 'route_between': return geo.routeBetween(args);
       case 'get_weather': return geo.getWeather(args);

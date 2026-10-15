@@ -27,7 +27,6 @@
     <section class="hero" id="hero" aria-live="polite"></section>
     <nav class="phase-nav" id="phaseNav" aria-label="Trip bases"></nav>
     <div class="layout">
-      <section class="list" id="list" aria-label="Itinerary"></section>
       <aside class="map-panel" aria-label="Map">
         <div class="map-frame" id="mapFrame">
           <div id="map" role="application" aria-label="Trip map"></div>
@@ -39,13 +38,14 @@
             <button class="chip" type="button" id="fit">Fit</button>
             <button class="chip" type="button" id="gps" aria-pressed="false">My location</button>
           </div>
-          <div class="map-caption" id="mapCaption"></div>
         </div>
+        <div class="map-edge"><span class="map-caption" id="mapCaption" role="status"></span><button class="btn btn-small" id="mapSize" type="button" aria-label="Change map height">Smaller map</button></div>
         <p class="hint" id="gpsStatus" role="status" hidden></p>
       </aside>
+      <section class="list" id="list" aria-label="Itinerary" tabindex="0"></section>
     </div>
   </main>
-  <footer class="credits site-credits">Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL), tiles by OpenFreeMap. Routes by FOSSGIS OSRM (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">fix the map</a>). Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (<a href="https://open-meteo.com/en/license" target="_blank" rel="noopener noreferrer">CC BY 4.0, non-commercial use</a>).</footer>
+  <template id="footerTemplate"><footer class="credits site-credits"><p>© 2026 Jihad Karaki. All rights reserved.</p><p>Built with <a href="https://maplibre.org/" target="_blank" rel="noopener noreferrer">open source maps</a>, data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>.</p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL), tiles by OpenFreeMap. Routes by FOSSGIS OSRM (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">fix the map</a>). Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (<a href="https://open-meteo.com/en/license" target="_blank" rel="noopener noreferrer">CC BY 4.0, non-commercial use</a>).</footer></template>
 
   <dialog id="libraryDlg" aria-labelledby="libraryTitle">
     <form method="dialog" class="dlg-head"><h2 id="libraryTitle">My trips</h2><button class="icon-btn" aria-label="Close">×</button></form>
@@ -96,7 +96,10 @@
       <label>Notes<textarea id="sfDesc" rows="3" maxlength="1200"></textarea></label>
       <label>Link (https)<input id="sfLink" type="url" placeholder="https://"></label>
       <label>Link label<input id="sfLinkLabel" maxlength="80" placeholder="Website"></label>
-      <label>Photo of this place (https)<input id="sfImage" type="url" placeholder="https://upload.wikimedia.org/..."></label>
+      <button class="btn" id="sfFindPhoto" type="button">Find a photo</button>
+      <p class="hint" id="sfPhotoStatus" role="status">Photos from Wikipedia and Wikimedia Commons. Check that the photo shows this stop.</p>
+      <div class="photo-candidates" id="sfPhotos"></div>
+      <label>Paste image URL<input id="sfImage" type="url" placeholder="https://upload.wikimedia.org/..."></label>
       <label>Photo credit<input id="sfCredit" maxlength="200" placeholder="Author, licence"></label>
       <p class="error" id="sfError" role="alert" hidden></p>
       <div class="row"><button class="btn btn-primary" value="ok">Save stop</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>
@@ -149,11 +152,14 @@
       <div class="dlg-head"><h2 id="settingsTitle">Settings</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
       <p class="hint">Point the app at your own Nominatim, OSRM or Open-Meteo server. Defaults use public providers.</p>
       <p class="hint">Enter complete endpoint URLs, including the route profile path for OSRM. Use HTTPS, or HTTP only for localhost or 127.0.0.1. No credentials, query or fragment.</p>
+      <label>Maps links<select id="mapsLinks"><option value="both">Both</option><option value="osm">OpenStreetMap</option><option value="google">Google Maps</option></select></label>
       <div id="providerFields" class="provider-fields"></div>
       <p class="error" id="providerError" role="alert" hidden></p>
       <div class="row"><button class="btn btn-primary" value="ok">Save settings</button><button class="btn" type="button" id="resetProviders">Reset to defaults</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>
     </form>
   </dialog>
+
+  <dialog id="liveDlg" aria-labelledby="liveTitle"><form method="dialog" class="dlg-head"><h2 id="liveTitle">Trip weather</h2><button class="icon-btn" aria-label="Close">×</button></form><div class="dlg-body" id="liveDetails"></div></dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="js/app.js"></script>

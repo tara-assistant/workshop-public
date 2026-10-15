@@ -85,3 +85,17 @@ The server binds only to `127.0.0.1`. Set `PORT` to change 8766. It serves this 
 ## Development
 
 Public edits follow a feature branch, a reviewed pull request, passing checks and an approved merge. Keep private notes and keys out of public source.
+
+## Pinned workspace and live weather
+
+The phone layout keeps the title, progress, filters and map pinned. Only the itinerary scrolls. Smaller map and Taller map switch between a 120 px map and the normal 38 vh map. On desktop the itinerary scrolls in the left column and the map fills the right column. Reset map view fits the focused day or visible trip and clears tilt and bearing. Packing items are wrapping chips and retain browser checks. Credits sit at the end of the list.
+
+The live title strip shows current conditions at the first stop of today's or the next dated trip day, falling back to the last dated day after the trip. It includes a countdown, current temperature, conditions, wind and current-hour rain chance, plus the relevant day's forecast. Outside the 14 day window it says Typical for these dates, not a forecast. More opens the full text. Tap the strip to open the day in the list. Values are cached and refreshed every 10 minutes while visible; saved values remain labelled when a refresh fails. This cache lasts for the current page session. No location permission is needed.
+
+## Stop photos and map links
+
+Edit a stop and press Find a photo for up to four nearby Wikipedia and Wikimedia Commons candidates. Pick one, check its Photo source for the actual place and reuse terms, then save. Paste image URL and Photo credit remain available. One photo is saved per stop in the existing imageUrl and imageCredit fields. Search makes small cached requests and requires no key. Google Maps photos are not used because there is no keyless route.
+
+Settings includes Wikipedia and Wikimedia Commons API endpoints and Maps links: OpenStreetMap, Google Maps, or Both (the default). Both shows four map and directions links per stop. These are plain external URLs. Directions follow the day mode; cycling uses Google's bicycling URL mode. The link builder also accepts transit, while schema v1 day modes remain walking, cycling and driving. Settings stay in localStorage and do not enter trip exports.
+
+The optional MCP connector exposes 13 tools. find_stop_photo is read only and returns candidates; an agent uses update_stop with imageUrl and imageCredit after checking the source. The browser and connector share photo discovery code. API references: [MediaWiki geosearch](https://www.mediawiki.org/wiki/API:Geosearch), [image metadata](https://www.mediawiki.org/wiki/API:Imageinfo), and [Open-Meteo weather](https://open-meteo.com/en/docs).

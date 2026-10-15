@@ -1,4 +1,6 @@
 export const defaults = Object.freeze({
+  wikipedia: 'https://en.wikipedia.org/w/api.php',
+  commons: 'https://commons.wikimedia.org/w/api.php',
   search: 'https://nominatim.openstreetmap.org/search',
   routing: Object.freeze({
     driving: 'https://routing.openstreetmap.de/routed-car/route/v1/driving',
@@ -33,6 +35,10 @@ export function normalizeProviders(value = defaults) {
   for (const mode of ['driving', 'walking', 'cycling']) {
     out.routing[mode] = validateProviderUrl(value?.routing?.[mode]);
     if (!out.routing[mode]) throw new Error('Invalid ' + mode + ' routing URL.');
+  }
+  for (const key of ['wikipedia', 'commons']) {
+    out[key] = validateProviderUrl(value?.[key] === undefined ? defaults[key] : value[key]);
+    if (!out[key]) throw new Error('Invalid ' + key + ' URL.');
   }
   return out;
 }

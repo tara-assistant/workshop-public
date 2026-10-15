@@ -49,8 +49,37 @@ export class MapView {
       attributionControl: false, maxPitch: 75, dragRotate: true
     });
     this.map = map;
+    const reset = {
+      onAdd: () => {
+        const group = h('div', { class: 'maplibregl-ctrl maplibregl-ctrl-group' });
+        const button = h('button', { type: 'button', 'aria-label': 'Reset map view', title: 'Reset map view', onClick: () => this.handlers.onReset?.() });
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '22');
+        svg.setAttribute('height', '22');
+        svg.setAttribute('aria-hidden', 'true');
+        const path = document.createElementNS(svg.namespaceURI, 'path');
+        path.setAttribute('d', 'M4 10a8 8 0 1 1 1 7M4 4v6h6');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'currentColor');
+        path.setAttribute('stroke-width', '2');
+        svg.append(path); button.append(svg); group.append(button);
+        return group;
+      },
+      onRemove: () => {}
+    };
+    map.addControl(reset, 'bottom-right');
     map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }), 'bottom-right');
-    map.addControl(new maplibregl.AttributionControl({ compact: true }));
+    map.addControl(new maplibregl.AttributionControl({ compact: false }));
+    const attribution = this.container.querySelector('.maplibregl-ctrl-attrib');
+    attribution.id = 'mapAttribution';
+    attribution.hidden = true;
+    const credits = h('button', { type: 'button', class: 'map-attribution', 'aria-label': 'Map attribution', 'aria-controls': 'mapAttribution', 'aria-expanded': false, text: 'ⓘ', onClick: () => {
+      attribution.hidden = !attribution.hidden;
+      credits.setAttribute('aria-expanded', String(!attribution.hidden));
+    } });
+    document.querySelector('.map-edge')?.prepend(credits);
+    document.querySelector('.map-edge')?.append(attribution);
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.on('load', () => this._onLoad());
     map.on('error', (event) => {
@@ -61,7 +90,8 @@ export class MapView {
       }
     });
     map.on('click', (event) => this.handlers.onMapClick?.(event.lngLat));
-    window.addEventListener('resize', () => map.resize());
+    this.resizeObserver = new ResizeObserver(() => map.resize());
+    this.resizeObserver.observe(this.container);
     return true;
   }
 
@@ -180,6 +210,14 @@ export class MapView {
       const ll = marker.getLngLat();
       this.map.flyTo({ center: [ll.lng, ll.lat], zoom: Math.max(this.map.getZoom(), 13), duration: 700, essential: true });
     }
+  }
+
+  reset(ids) {
+    this.set3D(false);
+    if (!this.loaded) return;
+    this.map.jumpTo({ bearing: 0, pitch: 0 });
+    if (ids?.length && this.items.some((item) => ids.includes(item.id))) this.fitItems(ids);
+    else this.fit();
   }
 
   fit(animate = true) {

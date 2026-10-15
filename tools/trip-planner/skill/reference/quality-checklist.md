@@ -14,3 +14,5 @@
 - [ ] Use one verified actual-place photo per stop or day when available. Every photo has an HTTPS file URL, author, licence and file-page source; respect reuse terms. Omit unverified images and paired credits.
 - [ ] Remove traveller names, home addresses, private contacts, confirmation numbers and signed booking URLs. Keep author names only for photo attribution.
 - [ ] Deliver the whole validated trip as raw JSON or a `.json` file. For `?plan=`, use a percent-encoded HTTPS URL returning JSON with suitable cross-origin access. For MCP edits, validate the resulting whole trip and confirm a requested save succeeded.
+
+- [ ] For find_stop_photo results, inspect sourceUrl, verify the actual stop and license, then save one imageUrl and imageCredit with update_stop. Google Maps photos are not used because there is no keyless route.

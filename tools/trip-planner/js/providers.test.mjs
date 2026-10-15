@@ -23,11 +23,16 @@ test('configuration copies defaults and validates every adapter without mutation
   config.routing.driving = 'http://localhost:8080/route/v1/driving';
   assert.notEqual(config.routing.driving, defaults.routing.driving);
   assert.equal(normalizeProviders(config).routing.driving, config.routing.driving);
-  for (const key of ['search', 'forecast', 'archive', 'elevation', 'marine']) {
+  for (const key of ['search', 'forecast', 'archive', 'elevation', 'marine', 'wikipedia', 'commons']) {
     assert.throws(() => normalizeProviders({ ...defaults, [key]: 'http://remote.test' }));
   }
   for (const mode of ['driving', 'walking', 'cycling']) {
     assert.throws(() => normalizeProviders({ ...defaults, routing: { ...defaults.routing, [mode]: 'http://remote.test' } }));
   }
   assert.throws(() => normalizeProviders(null));
+});
+
+test('saved settings from before photo adapters retain public photo endpoints', () => {
+  const { wikipedia, commons, ...older } = defaults;
+  assert.deepEqual(normalizeProviders(older), defaults);
 });

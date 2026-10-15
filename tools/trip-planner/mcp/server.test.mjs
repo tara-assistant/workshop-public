@@ -13,7 +13,7 @@ import { createGeo } from './geo.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const expectedNames = ['list_trips', 'get_trip', 'validate_trip', 'save_trip', 'delete_trip', 'add_stop',
-  'update_stop', 'remove_stop', 'add_day', 'search_place', 'route_between', 'get_weather'];
+  'update_stop', 'remove_stop', 'add_day', 'find_stop_photo', 'search_place', 'route_between', 'get_weather'];
 const sample = JSON.parse(await readFile(new URL('../samples/sardegna.json', import.meta.url), 'utf8'));
 const fixture = () => ({ schema: 1, id: 'test-trip', title: 'Trip test', extra: { preserved: true },
   phases: [{ id: 'first', title: 'First phase', days: [{ dayNumber: 1, title: 'First day', stops: [] }] }] });
@@ -73,7 +73,7 @@ async function launch(t, port = 0, options = {}) {
   return { directory, child, rpc, call, messages };
 }
 
-test('stdio lists twelve tools and validates, edits and preserves trip files', async (t) => {
+test('stdio lists thirteen tools and validates, edits and preserves trip files', async (t) => {
   const client = await launch(t);
   await t.test('initialize echoes a date or falls back; notifications are silent; ping and errors work', async () => {
     assert.equal((await client.rpc('initialize', { protocolVersion: '2024-11-05' })).result.protocolVersion, '2024-11-05');
@@ -88,7 +88,7 @@ test('stdio lists twelve tools and validates, edits and preserves trip files', a
     }
     assert.deepEqual((await client.rpc('ping', [])).result, {});
     const listed = (await client.rpc('tools/list')).result.tools;
-    assert.equal(listed.length, 12);
+    assert.equal(listed.length, 13);
     assert.deepEqual(listed.map((tool) => tool.name), expectedNames);
     for (const tool of listed) {
       for (const rule of ['public entrance or trailhead', 'Never invent', 'verify with search_place',
@@ -164,7 +164,7 @@ test('stdio lists twelve tools and validates, edits and preserves trip files', a
   });
   await t.test('offline network tools return errors while storage stays usable', async () => {
     const calls = [['search_place', { query: 'Cagliari' }], ['route_between', { points: [[9, 39], [9.1, 39.1]], mode: 'driving' }],
-      ['get_weather', { lat: 39, lon: 9 }]];
+      ['get_weather', { lat: 39, lon: 9 }], ['find_stop_photo', { name: 'Beach', lat: 39, lon: 9 }]];
     for (const [name, args] of calls) {
       const result = await client.call(name, args);
       assert.equal(result.failed, true);

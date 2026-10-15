@@ -86,6 +86,7 @@ Set `TRIP_MCP_PORT` to a different port if 4789 is busy. `TRIP_MCP_PORT=0` disab
 | `add_day` | `tripId`, `phaseId`, `day`. Append a day to a phase. |
 | `search_place` | `query`, optional `limit` from 1 to 10, default 5. Search Nominatim. |
 | `route_between` | `points` as `[[lon,lat],...]`, `mode` as `walking`, `cycling` or `driving`. Request an OSRM route. |
+| `find_stop_photo` | `name`, `lat`, `lon`. Read only. Return up to four `{imageUrl, imageCredit, sourceUrl}` candidates from Wikipedia and Wikimedia Commons. Check the actual place, then save one with `update_stop`. |
 | `get_weather` | `lat`, `lon`, optional `date` in `YYYY-MM-DD`. Return forecast or typical weather. |
 
 Every tool description repeats these rules: coordinates are the real public entrance or trailhead. Never invent places or coordinates; verify with `search_place`. Boat transfers and technical hikes are never inferred from road routing. Mountain forecast is one grid point. Images must be real photos of the actual place with credit. No personal data in trip files. These are instructions for the agent; JSON validation cannot prove access, photo authenticity or absence of personal data.
@@ -100,7 +101,7 @@ Routing uses `https://router.project-osrm.org`, also queued at one request per s
 
 Weather uses [Open-Meteo forecast](https://open-meteo.com/en/docs) for today through 13 days ahead, based on today's UTC date. Other dates use the [archive](https://open-meteo.com/en/docs/historical-weather-api) for up to three same-date samples in years before both the requested year and current year. February 29 uses leap years only. Typical values are sample means, not forecasts or a long term climate normal. Typical `rainChance` is the percentage of sampled days with at least 0.1 mm rain. Results carry `kind: "forecast"` or `kind: "typical"`, sources, sample dates and warnings for unavailable samples. Mountain weather is one grid point, not conditions across an entire hike.
 
-All requests use `User-Agent: TripPlannerMCP/1.0 (local)` and a 15 second timeout. There are no automatic retries. Service errors become MCP tool errors. Set `TRIP_MCP_OFFLINE=1` to disable all three network tools. It does not disable trip storage or local HTTP.
+All requests use `User-Agent: TripPlannerMCP/1.0 (local)` and a 15 second timeout. There are no automatic retries. Service errors become MCP tool errors. Set `TRIP_MCP_OFFLINE=1` to disable all four network tools. It does not disable trip storage or local HTTP.
 
 ## Security
 
@@ -117,3 +118,5 @@ node --test mcp/server.test.mjs
 ```
 
 Tests use offline child servers, localhost HTTP and mocked service responses. Temporary trip folders are created inside `mcp/` and removed after each test. No public network calls are made.
+
+Photo discovery is read only, cached, bounded to four candidates, and uses nearby Wikipedia pages plus Wikimedia Commons files with author and license metadata. Inspect sourceUrl to confirm the subject and reuse terms. Save one candidate through update_stop using the existing imageUrl and imageCredit fields. No schema change is needed. Google Maps photos are not used because there is no keyless route. Offline mode disables this network tool along with the other network tools.

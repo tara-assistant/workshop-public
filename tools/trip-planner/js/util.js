@@ -34,6 +34,23 @@ export function osmDirections(lat, lon, mode = 'driving') {
   return `https://www.openstreetmap.org/directions?engine=${engine}&route=%3B${lat}%2C${lon}`;
 }
 
+export function googlePoint(lat, lon) {
+  return safeUrl(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`);
+}
+
+export function googleDirections(lat, lon, mode = 'driving') {
+  const travelmode = ['driving', 'walking', 'transit'].includes(mode) ? mode : mode === 'cycling' ? 'bicycling' : 'driving';
+  return safeUrl(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=${travelmode}`);
+}
+
+export function stopMapLinks(lat, lon, mode, choice = 'both') {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return [];
+  const links = [];
+  if (choice !== 'google') links.push(['OSM map', osmPoint(lat, lon)], ['OSM directions', osmDirections(lat, lon, mode)]);
+  if (choice !== 'osm') links.push(['Google map', googlePoint(lat, lon)], ['Google directions', googleDirections(lat, lon, mode)]);
+  return links.map(([label, url]) => ({ label, url: safeUrl(url) })).filter((link) => link.url);
+}
+
 // Weekday comes from the date, never from stored text.
 export function fmtDay(iso, withWeekday = true) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return '';

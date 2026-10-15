@@ -1,5 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { performance } from 'node:perf_hooks';
+import { createPhotoFinder } from '../js/photos.mjs';
+import { defaults } from '../js/providers.mjs';
 
 const USER_AGENT = 'TripPlannerMCP/1.0 (local)';
 const DAY = 86_400_000;
@@ -164,5 +166,11 @@ export function createGeo({ fetchFn = globalThis.fetch, now = () => new Date(),
       note: 'Typical weather is the mean of up to three same-date archive samples before both the requested year and the current year. It is not a forecast. rainChance is the fraction of sampled days with at least 0.1 mm of rain. ' + MOUNTAIN_NOTE };
   }
 
-  return { searchPlace, routeBetween, getWeather };
+  const photoQueue = queue();
+  const photoFinder = createPhotoFinder((url) => photoQueue(() => request('Wikimedia', url)), { now: () => now().getTime() });
+  const findStopPhoto = (args) => {
+    online();
+    return photoFinder({ ...args, wikipedia: defaults.wikipedia, commons: defaults.commons });
+  };
+  return { searchPlace, routeBetween, getWeather, findStopPhoto };
 }

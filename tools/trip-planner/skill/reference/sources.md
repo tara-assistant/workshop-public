@@ -24,3 +24,5 @@ Useful primary Dolomites sources:
 - [South Tyrol mountain weather](https://weather.province.bz.it/en/mountain-weather) and [ARPAV Dolomiti Meteo](https://www.arpa.veneto.it/dati-ambientali/bollettini/meteo/dolomiti): fresh mountain forecasts before hikes.
 
 Keep attribution in the trip's visible credit, links, descriptions or tips, as appropriate. A source link alone is not always sufficient attribution. Do not assume a tourism site's credited photo permits reuse.
+
+Photo discovery: the optional MCP tool find_stop_photo takes name, lat and lon. The app and connector use [MediaWiki geosearch](https://www.mediawiki.org/wiki/API:Geosearch) for nearby Wikipedia pages and Commons files, then [imageinfo](https://www.mediawiki.org/wiki/API:Imageinfo) for author and license metadata. Results have imageUrl, imageCredit and sourceUrl. Confirm the subject and reuse terms at sourceUrl before choosing one. Save with update_stop. Google Maps photos are not used because there is no keyless route. Plain Google Maps map and directions URLs are available without fetching Google imagery.
