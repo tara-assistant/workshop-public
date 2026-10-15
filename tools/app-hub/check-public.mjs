@@ -16,7 +16,7 @@ const candidateRoot = resolve(process.cwd(), candidateArg);
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
 const uiAssets = await sharedUiAssets(repositoryRoot, projectDir);
 const expectedFiles = [...validatePublicCatalog(catalog, repositoryRoot, projectDir), ...uiAssets.map(asset => asset.path)].sort();
-assert.equal(expectedFiles.length, 26, 'Public content allowlist must remain exactly 26 files.');
+assert.equal(expectedFiles.length, 29, 'Public content allowlist must remain exactly 29 files.');
 const privateBoundary = /private[.-]projects\.|private[- ]apps|PRIVATE_PROJECTS:|No private apps yet|private-apps\.json|private-hub\.html|private-app-hub\.css|catalog\.json/i;
 for (const name of ['index.html', 'tara.html', ...uiAssets.map(asset => `assets/${asset.name}`)]) {
   assert.doesNotMatch((await readSafe(repositoryRoot, resolve(projectDir, name))).toString('utf8'), privateBoundary, `Private address or navigation in public source: ${name}`);

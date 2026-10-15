@@ -11,9 +11,9 @@ const projectDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(projectDir, '../..');
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
 // 18 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder.
-test('catalog allowlist has 22 fixed public release files and uses category source roots', () => {
+test('catalog allowlist has 25 fixed public release files and uses category source roots', () => {
   const files = [...validatePublicCatalog(catalog, repositoryRoot, projectDir)];
-  assert.equal(files.length, 22);
+  assert.equal(files.length, 25);
   assert(!files.some(file => /private|projects\.json/.test(file)));
   assert.deepEqual(catalog.projects.map(item => item.sourceRoot), [
     'tools/trip-planner',
