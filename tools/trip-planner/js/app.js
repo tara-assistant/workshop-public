@@ -139,12 +139,33 @@ function fillWx(el, w, day) {
   el.hidden = false;
 }
 
+const MAP_NAMES = { OSM: 'OpenStreetMap', Google: 'Google Maps' };
+function mapChoice(label, links, local) {
+  const items = links.map((link) => ({ url: link.url, name: MAP_NAMES[link.label.split(' ')[0]] || link.label }));
+  if (local) items.unshift({ name: 'This map', onClick: local });
+  if (!items.length) return null;
+  if (items.length === 1 && items[0].url) return h('a', { class: 'menu-single', href: items[0].url, target: '_blank', rel: 'noopener noreferrer', text: label, title: label + ' in ' + items[0].name });
+  return h('details', { class: 'menu' }, h('summary', { text: label }),
+    h('div', { class: 'menu-items' }, items.map((item) => item.url
+      ? h('a', { href: item.url, target: '_blank', rel: 'noopener noreferrer', text: item.name })
+      : h('button', { type: 'button', text: item.name, onClick: (event) => { event.currentTarget.closest('details').open = false; item.onClick(); } }))));
+}
+
+function setMapCollapsed(collapsed) {
+  document.querySelector('.map-panel').classList.toggle('map-collapsed', collapsed);
+  const button = $('mapSize');
+  button.setAttribute('aria-expanded', String(!collapsed));
+  button.querySelector('.map-handle-label').textContent = collapsed ? 'Show map' : 'Hide map';
+  try { localStorage.setItem('tp-map-collapsed', collapsed ? '1' : '0'); } catch { /* storage is optional */ }
+  setTimeout(() => mapView?.resize(), 240);
+}
+
 function renderStop(trip, phase, pi, day, stop, index) {
   const c = colorOf(trip, phase, pi);
   const dir = day.mode || 'driving';
   const links = [
-    h('button', { type: 'button', text: 'Show on map', onClick: () => selectStop(stop.id, { scroll: false }) }),
-    ...stopMapLinks(stop.lat, stop.lon, dir, mapsChoice()).map((link) => h('a', { href: link.url, target: '_blank', rel: 'noopener noreferrer', text: link.label })),
+    mapChoice('Show', stopMapLinks(stop.lat, stop.lon, dir, mapsChoice()).filter((link) => link.label.endsWith(' map')), () => { setMapCollapsed(false); selectStop(stop.id, { scroll: false }); }),
+    mapChoice('Directions', stopMapLinks(stop.lat, stop.lon, dir, mapsChoice()).filter((link) => link.label.endsWith(' directions'))),
     ...(stop.links || []).map((l) => { const u = safeUrl(l.url); return u ? h('a', { href: u, target: '_blank', rel: 'noopener noreferrer', text: l.label || 'Link' }) : null; })
   ];
   const img = safeUrl(stop.imageUrl);
@@ -1021,13 +1042,15 @@ function toggleGps() {
 function wire() {
   setupProviders();
   $('gps').onclick = toggleGps;
-  $('mapSize').onclick = () => {
-    const panel = document.querySelector('.map-panel');
-    const compact = panel.classList.toggle('map-compact');
-    $('mapSize').textContent = compact ? 'Taller map' : 'Smaller map';
-    mapView?.resize();
+  $('mapSize').onclick = () => setMapCollapsed(!document.querySelector('.map-panel').classList.contains('map-collapsed'));
+  try { if (localStorage.getItem('tp-map-collapsed') === '1' && innerWidth < 900) setMapCollapsed(true); } catch { /* storage is optional */ }
+  $('toolsBtn').onclick = () => {
+    const open = $('mapTools').hidden;
+    $('mapTools').hidden = !open;
+    $('toolsBtn').setAttribute('aria-expanded', String(open));
   };
   scheduleLiveRefresh();
+  document.addEventListener('click', (event) => document.querySelectorAll('details.menu[open]').forEach((d) => { if (!d.contains(event.target)) d.open = false; }));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveWeather(); if (document.hidden && gpsToken) stopGps('Location tracking stopped while the page was hidden.'); });
   window.addEventListener('pagehide', () => { if (gpsToken) stopGps(); });
   $('libraryBtn').onclick = () => { $('importError').hidden = true; renderLibrary(); $('libraryDlg').showModal(); };
@@ -1138,7 +1161,7 @@ function liveLines(trip) {
   const current = w ? `Now ${n(w.temperature, ' °C')}, ${w.description.toLowerCase()}, wind ${n(w.wind, ' km/h')}, rain ${n(w.rainChance, '%')}` : 'Current weather unavailable';
   const forecast = f ? `Day ${state.day.dayNumber}: ${n(f.tMin, ' °C')} to ${n(f.tMax, ' °C')}, rain ${n(f.rainChance, '%')}. ${f.kind === 'forecast' ? 'Forecast' : 'Typical for these dates, not a forecast'}` : 'Trip weather unavailable';
   const time = value?.updatedAt ? new Date(value.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
-  return { state, first: `${state.label} · ${current}`, second: `${forecast}${time ? ' · Updated ' + time : ''}${value?.stale ? ' · Saved data, offline' : ''}` };
+  return { state, first: state.label ? `${state.label} · ${current}` : current, second: `${forecast}${time ? ' · Updated ' + time : ''}${value?.stale ? ' · Saved data, offline' : ''}` };
 }
 
 function openLiveDay() {

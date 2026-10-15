@@ -70,16 +70,13 @@ export class MapView {
     };
     map.addControl(reset, 'bottom-right');
     map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }), 'bottom-right');
-    map.addControl(new maplibregl.AttributionControl({ compact: false }));
-    const attribution = this.container.querySelector('.maplibregl-ctrl-attrib');
-    attribution.id = 'mapAttribution';
-    attribution.hidden = true;
-    const credits = h('button', { type: 'button', class: 'map-attribution', 'aria-label': 'Map attribution', 'aria-controls': 'mapAttribution', 'aria-expanded': false, text: 'ⓘ', onClick: () => {
-      attribution.hidden = !attribution.hidden;
-      credits.setAttribute('aria-expanded', String(!attribution.hidden));
-    } });
-    document.querySelector('.map-edge')?.prepend(credits);
-    document.querySelector('.map-edge')?.append(attribution);
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+    // The credits live inside the map as a small info button, closed until tapped.
+    map.once('load', () => {
+      const credits = this.container.querySelector('.maplibregl-ctrl-attrib');
+      credits?.classList.remove('maplibregl-compact-show');
+      credits?.removeAttribute('open');
+    });
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.on('load', () => this._onLoad());
     map.on('error', (event) => {

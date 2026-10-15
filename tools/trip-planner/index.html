@@ -30,7 +30,9 @@
       <aside class="map-panel" aria-label="Map">
         <div class="map-frame" id="mapFrame">
           <div id="map" role="application" aria-label="Trip map"></div>
-          <div class="map-tools" role="group" aria-label="Map layers">
+          <span class="map-caption" id="mapCaption" role="status"></span>
+          <button class="map-layers-btn" id="toolsBtn" type="button" aria-expanded="false" aria-controls="mapTools" aria-label="Map options" title="Map options"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5zM3 12.5l9 5 9-5M3 16.5l9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+          <div class="map-tools" id="mapTools" role="group" aria-label="Map options" hidden>
             <button class="chip" type="button" data-layer="map" aria-pressed="true">Map</button>
             <button class="chip" type="button" data-layer="topo" aria-pressed="false">Topo</button>
             <button class="chip" type="button" data-layer="sat" aria-pressed="false">Satellite</button>
@@ -38,14 +40,14 @@
             <button class="chip" type="button" id="fit">Fit</button>
             <button class="chip" type="button" id="gps" aria-pressed="false">My location</button>
           </div>
+          <p class="map-status" id="gpsStatus" role="status" hidden></p>
         </div>
-        <div class="map-edge"><span class="map-caption" id="mapCaption" role="status"></span><button class="btn btn-small" id="mapSize" type="button" aria-label="Change map height">Smaller map</button></div>
-        <p class="hint" id="gpsStatus" role="status" hidden></p>
+        <button class="map-handle" id="mapSize" type="button" aria-expanded="true" aria-controls="mapFrame"><span class="grip" aria-hidden="true"></span><span class="map-handle-label">Hide map</span></button>
       </aside>
       <section class="list" id="list" aria-label="Itinerary" tabindex="0"></section>
     </div>
   </main>
-  <template id="footerTemplate"><footer class="credits site-credits"><p>© 2026 Jihad Karaki. All rights reserved.</p><p>Built with <a href="https://maplibre.org/" target="_blank" rel="noopener noreferrer">open source maps</a>, data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>.</p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL), tiles by OpenFreeMap. Routes by FOSSGIS OSRM (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">fix the map</a>). Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (<a href="https://open-meteo.com/en/license" target="_blank" rel="noopener noreferrer">CC BY 4.0, non-commercial use</a>).</footer></template>
+  <template id="footerTemplate"><footer class="credits site-credits"><p>© 2026 <a href="https://metaengineershub.com/" target="_blank" rel="noopener noreferrer">MetaEngineers Hub</a>. All rights reserved. <a href="https://github.com/tara-assistant/workshop-public/tree/main/tools/trip-planner" target="_blank" rel="noopener noreferrer">Source code on GitHub</a></p><p>Built with <a href="https://maplibre.org/" target="_blank" rel="noopener noreferrer">open source maps</a>, data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>.</p>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL), tiles by OpenFreeMap. Routes by FOSSGIS OSRM (<a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">fix the map</a>). Weather and elevation by <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (<a href="https://open-meteo.com/en/license" target="_blank" rel="noopener noreferrer">CC BY 4.0, non-commercial use</a>).</footer></template>
 
   <dialog id="libraryDlg" aria-labelledby="libraryTitle">
     <form method="dialog" class="dlg-head"><h2 id="libraryTitle">My trips</h2><button class="icon-btn" aria-label="Close">×</button></form>

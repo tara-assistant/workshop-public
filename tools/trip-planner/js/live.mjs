@@ -7,7 +7,7 @@ export function tripDayState(trip, today = new Date().toLocaleDateString('en-CA'
   const target = current || next || days.at(-1);
   if (!target) return { day: null, label: 'Add trip dates' };
   if (current) return { day: current, label: `Day ${days.indexOf(current) + 1} of ${days.length}, today` };
-  if (!next) return { day: target, label: 'Trip finished' };
+  if (!next) return { day: target, label: '' };
   const count = Math.round((Date.parse(target.date + 'T12:00:00Z') - Date.parse(today + 'T12:00:00Z')) / 86400000);
   return { day: target, label: `${count} days to go` };
 }

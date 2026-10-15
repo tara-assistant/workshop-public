@@ -9,7 +9,7 @@ test('countdown selects the next or current dated day and reports a finished tri
   const trip = { phases: [{ days }] };
   assert.deepEqual(tripDayState(trip, '2026-10-15'), { day: days[0], label: '5 days to go' });
   assert.deepEqual(tripDayState(trip, '2026-10-21'), { day: days[1], label: 'Day 2 of 2, today' });
-  assert.deepEqual(tripDayState(trip, '2026-10-22'), { day: days[1], label: 'Trip finished' });
+  assert.deepEqual(tripDayState(trip, '2026-10-22'), { day: days[1], label: '' });
   assert.equal(tripDayState({ phases: [] }).label, 'Add trip dates');
   assert.equal(weatherDescription(0), 'Clear');
   assert.equal(weatherDescription(63), 'Rain');
