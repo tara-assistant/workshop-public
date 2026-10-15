@@ -14,6 +14,13 @@ export let storageError = '';
 
 const here = (path) => new URL(path, import.meta.url);
 
+function publicPresetNote(trip) {
+  if (trip?.id === PRESET_ID && /^This plan was tested and done by .+ for his summer trip\.$/.test(trip.note || '')) {
+    trip.note = 'This plan was tested on a summer trip.';
+  }
+  return trip;
+}
+
 export async function loadSchema() {
   if (!schema) schema = await (await fetch(here('../schema/trip.schema.json'))).json();
   return schema;
@@ -27,7 +34,10 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    if (parsed && parsed.trips && Array.isArray(parsed.order)) data = parsed;
+    if (parsed && parsed.trips && Array.isArray(parsed.order)) {
+      data = parsed;
+      publicPresetNote(data.trips[PRESET_ID]);
+    }
   } catch {
     storageError = 'Saved trips could not be read. Starting fresh.';
   }
@@ -43,7 +53,7 @@ function persist() {
 }
 
 async function fetchPreset() {
-  return (await fetch(here('../samples/sardegna.json'))).json();
+  return publicPresetNote(await (await fetch(here('../samples/sardegna.json'))).json());
 }
 
 export async function init() {

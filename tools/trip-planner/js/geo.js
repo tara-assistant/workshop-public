@@ -1,17 +1,14 @@
 // Keyless services behind small adapters: search (Nominatim), route (FOSSGIS OSRM), weather and elevation (Open-Meteo).
 // Public servers ask for light use: one request per second, cached results, no bulk calls.
 
-export const providers = {
-  search: 'https://nominatim.openstreetmap.org/search',
-  routing: {
-    driving: 'https://routing.openstreetmap.de/routed-car/route/v1/driving',
-    walking: 'https://routing.openstreetmap.de/routed-foot/route/v1/driving',
-    cycling: 'https://routing.openstreetmap.de/routed-bike/route/v1/driving'
-  },
-  forecast: 'https://api.open-meteo.com/v1/forecast',
-  archive: 'https://archive-api.open-meteo.com/v1/archive',
-  elevation: 'https://api.open-meteo.com/v1/elevation'
-};
+import { normalizeProviders } from './providers.mjs';
+
+export const providers = normalizeProviders();
+
+export function configureProviders(value) {
+  Object.assign(providers, normalizeProviders(value));
+  cache.clear();
+}
 
 const cache = new Map();
 const lanes = new Map();
@@ -40,7 +37,7 @@ async function getJson(url, signal) {
 export async function searchPlace(query, { signal, near } = {}) {
   const q = query.trim();
   if (q.length < 3) return [];
-  const key = 'search|' + q.toLowerCase();
+  const key = providers.search + '|search|' + q.toLowerCase();
   if (cache.has(key)) return cache.get(key);
   const url = new URL(providers.search);
   url.search = new URLSearchParams({ q, format: 'jsonv2', limit: '6', addressdetails: '0', ...(near ? { viewbox: near, bounded: '0' } : {}) });
@@ -56,7 +53,7 @@ export async function route(points, mode = 'driving', { signal } = {}) {
   if (points.length < 2 || points.length > 25) return null;
   const base = providers.routing[mode] || providers.routing.driving;
   const coords = points.map((p) => `${p[0].toFixed(5)},${p[1].toFixed(5)}`).join(';');
-  const key = `route|${mode}|${coords}`;
+  const key = `${base}|route|${mode}|${coords}`;
   if (cache.has(key)) return cache.get(key);
   const data = await throttled(() => getJson(`${base}/${coords}?overview=full&geometries=geojson&steps=false`, signal));
   const r = data.code === 'Ok' ? data.routes?.[0] : null;
@@ -77,21 +74,23 @@ const day = (iso, shiftYears = 0) => {
 };
 
 function daysFromToday(iso) {
-  return Math.round((new Date(iso + 'T12:00:00Z') - Date.now()) / 86400000);
+  return Math.round((new Date(iso + 'T00:00:00Z') - new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')) / 86400000);
 }
+
+export const inForecastWindow = (iso) => daysFromToday(iso) >= 0 && daysFromToday(iso) <= 13;
 
 const hm = (s) => (s ? s.slice(11, 16) : '');
 
 // Forecast when the date is within about two weeks, otherwise the average of the same date in the last 5 years.
 // Always labelled, so nobody reads a typical day as a forecast.
 export async function weather(lat, lon, iso, { signal } = {}) {
-  const key = `wx|${lat.toFixed(2)}|${lon.toFixed(2)}|${iso}`;
+  const forecastBase = providers.forecast, archiveBase = providers.archive;
+  const key = `${forecastBase}|${archiveBase}|wx|${lat.toFixed(2)}|${lon.toFixed(2)}|${iso}`;
   if (cache.has(key)) return cache.get(key);
-  const lead = daysFromToday(iso);
   let out = null;
   const daily = 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset';
-  if (lead >= -1 && lead <= 14) {
-    const url = `${providers.forecast}?latitude=${lat}&longitude=${lon}&daily=${daily}&timezone=auto&start_date=${iso}&end_date=${iso}`;
+  if (inForecastWindow(iso)) {
+    const url = `${forecastBase}?latitude=${lat}&longitude=${lon}&daily=${daily}&timezone=auto&start_date=${iso}&end_date=${iso}`;
     const j = await throttled(() => getJson(url, signal), 250, 'meteo');
     const d = j.daily;
     if (d?.time?.length) {
@@ -105,7 +104,8 @@ export async function weather(lat, lon, iso, { signal } = {}) {
     const rows = [];
     for (let y = -1; y >= -5; y--) {
       const dd = day(iso, y);
-      rows.push(throttled(() => getJson(`${providers.archive}?latitude=${lat}&longitude=${lon}&start_date=${day(dd, 0)}&end_date=${day(dd, 0)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset&timezone=auto`, signal), 250, 'meteo').catch(() => null));
+      const url = `${archiveBase}?latitude=${lat}&longitude=${lon}&start_date=${dd}&end_date=${dd}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset&timezone=auto`;
+      rows.push(throttled(() => getJson(url, signal), 250, 'meteo').catch(() => null));
     }
     const got = (await Promise.all(rows)).map((j) => j?.daily).filter((d) => d?.time?.length);
     if (got.length) {
@@ -125,17 +125,30 @@ export async function weather(lat, lon, iso, { signal } = {}) {
 // Elevation in metres for up to 100 points per call.
 export async function elevations(points, { signal } = {}) {
   if (!points.length) return [];
+  const base = providers.elevation;
   const sets = [];
   for (let i = 0; i < points.length; i += 100) sets.push(points.slice(i, i + 100));
   const out = [];
   for (const set of sets) {
     const lat = set.map((p) => p[1].toFixed(5)).join(',');
     const lon = set.map((p) => p[0].toFixed(5)).join(',');
-    const key = `ele|${lat}|${lon}`;
-    if (!cache.has(key)) cache.set(key, (await throttled(() => getJson(`${providers.elevation}?latitude=${lat}&longitude=${lon}`, signal), 250, 'meteo')).elevation || []);
+    const url = `${base}?latitude=${lat}&longitude=${lon}`;
+    const key = `${base}|ele|${lat}|${lon}`;
+    if (!cache.has(key)) cache.set(key, (await throttled(() => getJson(url, signal), 250, 'meteo')).elevation || []);
     out.push(...cache.get(key));
   }
   return out;
+}
+
+export async function waves(lat, lon, iso, { signal } = {}) {
+  if (!inForecastWindow(iso)) return null;
+  const url = `${providers.marine}?latitude=${lat}&longitude=${lon}&daily=wave_height_max&start_date=${iso}&end_date=${iso}&timezone=auto`;
+  if (!cache.has(url)) {
+    const data = await throttled(() => getJson(url, signal), 250, 'meteo');
+    const value = data.daily?.wave_height_max?.[0];
+    cache.set(url, Number.isFinite(value) ? value : null);
+  }
+  return cache.get(url);
 }
 
 export function trackStats(track) {

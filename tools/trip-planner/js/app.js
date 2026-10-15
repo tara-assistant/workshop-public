@@ -4,6 +4,7 @@ import { h, safeUrl, osmPoint, osmDirections, fmtDay, fmtRange, debounce, TYPE_L
 import { MapView } from './mapview.js';
 import * as geo from './geo.js';
 import { parseGpx, toGpx } from './gpx.js';
+import { defaults, normalizeProviders } from './providers.mjs';
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,6 +19,11 @@ const ui = {
 };
 
 const wxCache = new Map();
+const waveCache = new Map();
+const elevationCache = new Map();
+let providerVersion = 0;
+let gpsWatch = null;
+let gpsToken = null;
 let routeVer = 0;
 let routeCtl = null;
 const legCache = new Map();
@@ -104,8 +110,14 @@ function renderPhaseNav(trip) {
   );
 }
 
+const elevationKey = (stop) => `${stop.lon.toFixed(5)},${stop.lat.toFixed(5)}`;
+const weatherKey = (trip, day) => {
+  const boat = day.stops.find((s) => s.type === 'boat');
+  return `${providerVersion}|${trip.id}|${day.dayNumber}|${day.date}|${day.stops[0] ? elevationKey(day.stops[0]) : ''}|boat:${boat ? elevationKey(boat) : ''}`;
+};
+
 function wxLine(day) {
-  const w = wxCache.get(day.dayNumber + '|' + day.date);
+  const w = wxCache.get(weatherKey(store.active(), day));
   const el = h('div', { class: 'wx', dataset: { wx: day.dayNumber }, hidden: !w });
   if (w) fillWx(el, w, day);
   return el;
@@ -114,13 +126,14 @@ function wxLine(day) {
 function fillWx(el, w, day) {
   const r = (n) => Math.round(n);
   const hasHike = day.stops.some((s) => s.type === 'hike');
-  el.replaceChildren(
+  el.replaceChildren(...[
     h('span', {}, h('b', { text: `${r(w.tMin)} to ${r(w.tMax)} °C` })),
     h('span', { text: `Rain ${r(w.rainChance)}%` }),
     h('span', { text: `Wind to ${r(w.windMax)} km/h` }),
     w.sunrise && h('span', { text: `Sun ${w.sunrise} to ${w.sunset}` }),
+    day.stops.some((s) => s.type === 'boat') && geo.inForecastWindow(day.date) && Number.isFinite(waveCache.get(weatherKey(store.active(), day))) && h('span', { text: `Waves up to ${waveCache.get(weatherKey(store.active(), day))} m` }),
     h('span', { class: 'wx-note', text: (w.kind === 'forecast' ? 'Forecast.' : `Typical for these dates, average of ${w.years} recent years. Not a forecast.`) + (hasHike ? ' The forecast is for one point. Check the local mountain forecast before a hike.' : '') })
-  );
+  ].filter(Boolean));
   el.hidden = false;
 }
 
@@ -140,11 +153,13 @@ function renderStop(trip, phase, pi, day, stop, index) {
       h('div', { class: 'stop-main' },
         h('button', { class: 'stop-name', type: 'button', text: `${index + 1}. ${stop.name}`, onClick: () => selectStop(stop.id, { scroll: false }) }),
         h('div', { class: 'stop-time', text: [stop.time, stop.dwell ? `about ${stop.dwell} min` : ''].filter(Boolean).join(' · ') })
-      )
+      ),
+      h('button', { class: 'drag-handle', type: 'button', text: '⠿', 'aria-label': `Drag ${stop.name} to reorder. Or use Up and Down.`, onPointerDown: (e) => startStopDrag(e, stop.id) })
     ),
     img && h('img', { class: 'stop-photo', src: img, alt: stop.name, loading: 'lazy', referrerpolicy: 'no-referrer', onError: (e) => { e.target.remove(); } }),
     img && stop.imageCredit && h('p', { class: 'credit', text: 'Photo: ' + stop.imageCredit }),
     stop.desc && h('p', { class: 'stop-desc', text: stop.desc }),
+    h('p', { class: 'stop-elevation ele', dataset: { elevation: elevationKey(stop) }, hidden: !Number.isFinite(elevationCache.get(elevationKey(stop))), text: Number.isFinite(elevationCache.get(elevationKey(stop))) ? `Elevation ${Math.round(elevationCache.get(elevationKey(stop)))} m` : '' }),
     h('div', { class: 'chips' }, chipLabels(stop).map((label, i) => h('span', { class: 'tag' + (i === 0 ? ' type' : ''), text: label }))),
     stop.track?.length > 1 && trackBlock(stop),
     h('div', { class: 'links' }, links),
@@ -360,14 +375,63 @@ function doUndo() {
 function moveStop(id, delta) {
   const found = findStop(store.active(), id);
   const j = found.index + delta;
-  if (j < 0 || j >= found.day.stops.length) return;
+  if (j < 0 || j >= found.day.stops.length || delta === 0) return;
   store.mutate('Move stop', (trip) => {
     const f = findStop(trip, id);
     const arr = f.day.stops;
-    [arr[f.index], arr[j]] = [arr[j], arr[f.index]];
+    arr.splice(j, 0, arr.splice(f.index, 1)[0]);
   });
   legCache.delete(store.active().id + '|' + found.day.dayNumber);
   render();
+}
+
+function startStopDrag(event, id) {
+  if (!event.isPrimary || event.button !== 0) return;
+  event.preventDefault();
+  const handle = event.currentTarget;
+  const card = handle.closest('.stop');
+  const others = [...card.parentElement.querySelectorAll('.stop')].filter((el) => el !== card);
+  if (!others.length) return;
+  const original = findStop(store.active(), id).index;
+  let target = original, y = event.clientY, frame;
+  handle.setPointerCapture(event.pointerId);
+  card.classList.add('dragging');
+  const update = () => {
+    others.forEach((el) => el.classList.remove('drop-before', 'drop-after'));
+    target = others.findIndex((el) => y < el.getBoundingClientRect().top + el.offsetHeight / 2);
+    if (target < 0) target = others.length;
+    if (target < others.length) others[target].classList.add('drop-before');
+    else others.at(-1).classList.add('drop-after');
+  };
+  const scroll = () => {
+    const mapBottom = window.innerWidth < 900 ? $('mapFrame').getBoundingClientRect().bottom : 0;
+    if (y > window.innerHeight - 60) window.scrollBy(0, 14);
+    else if (y < Math.max(100, mapBottom + 35)) window.scrollBy(0, -14);
+    update();
+    frame = requestAnimationFrame(scroll);
+  };
+  const move = (e) => { y = e.clientY; update(); };
+  const finish = (e) => {
+    cancelAnimationFrame(frame);
+    handle.removeEventListener('pointermove', move);
+    handle.removeEventListener('pointerup', finish);
+    handle.removeEventListener('pointercancel', finish);
+    handle.removeEventListener('lostpointercapture', finish);
+    card.classList.remove('dragging');
+    others.forEach((el) => el.classList.remove('drop-before', 'drop-after'));
+    if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+    if (e.type === 'pointerup' && target !== original) {
+      moveStop(id, target - original);
+      const moved = $('stop-' + id);
+      moved?.querySelector('.drag-handle')?.focus({ preventScroll: true });
+      toast('Stop order updated.', { label: 'Undo', run: doUndo });
+    }
+  };
+  handle.addEventListener('pointermove', move);
+  handle.addEventListener('pointerup', finish);
+  handle.addEventListener('pointercancel', finish);
+  handle.addEventListener('lostpointercapture', finish);
+  frame = requestAnimationFrame(scroll);
 }
 
 function deleteStop(id) {
@@ -391,18 +455,52 @@ function addPhase() {
 
 async function fetchWeatherForOpenDays() {
   const trip = store.active();
+  const version = providerVersion;
   for (const day of allDays(trip).map((x) => x.day)) {
-    if (!ui.open.has(day.dayNumber) || !day.date || !day.stops.length) continue;
-    const key = day.dayNumber + '|' + day.date;
+    if (!ui.open.has(day.dayNumber) || !day.stops.length) continue;
+    // Snapshot request identity so edits cannot relabel a pending location's elevation.
+    const missing = day.stops.filter((s) => !elevationCache.has(elevationKey(s))).map((s) => ({ key: elevationKey(s), point: [s.lon, s.lat] }));
+    if (missing.length) {
+      missing.forEach(({ key }) => elevationCache.set(key, null));
+      geo.elevations(missing.map(({ point }) => point)).then((values) => {
+        if (version !== providerVersion) return;
+        missing.forEach(({ key }, i) => {
+          if (!Number.isFinite(values[i])) return;
+          elevationCache.set(key, values[i]);
+          document.querySelectorAll('[data-elevation]').forEach((el) => {
+            if (el.dataset.elevation !== key) return;
+            el.textContent = `Elevation ${Math.round(values[i])} m`;
+            el.hidden = false;
+          });
+        });
+      }).catch(() => {});
+    }
+    if (!day.date) continue;
+    const key = weatherKey(trip, day);
+    const refresh = () => {
+      const current = store.active();
+      const liveDay = current && findDay(current, day.dayNumber)?.day;
+      if (!liveDay || weatherKey(current, liveDay) !== key || !wxCache.get(key)) return;
+      const el = document.querySelector(`[data-wx="${day.dayNumber}"]`);
+      if (el) fillWx(el, wxCache.get(key), liveDay);
+    };
+    const boat = day.stops.find((s) => s.type === 'boat');
+    if (boat && geo.inForecastWindow(day.date) && !waveCache.has(key)) {
+      waveCache.set(key, null);
+      geo.waves(boat.lat, boat.lon, day.date).then((value) => {
+        if (version !== providerVersion) return;
+        waveCache.set(key, value);
+        refresh();
+      }).catch(() => {});
+    }
     if (wxCache.has(key)) continue;
     wxCache.set(key, null);
     const s = day.stops[0];
     geo.weather(s.lat, s.lon, day.date).then((w) => {
-      if (!w) { wxCache.delete(key); return; }
+      if (version !== providerVersion) return;
       wxCache.set(key, w);
-      const el = document.querySelector(`[data-wx="${day.dayNumber}"]`);
-      if (el) fillWx(el, w, day);
-    }).catch(() => wxCache.delete(key));
+      refresh();
+    }).catch(() => {});
   }
 }
 
@@ -757,7 +855,111 @@ async function connectMcp() {
 
 /* ---------- boot ---------- */
 
+const providerFields = [
+  ['search', 'Place search (Nominatim endpoint)'],
+  ['driving', 'Car routing (OSRM route base)'],
+  ['walking', 'Foot routing (OSRM route base)'],
+  ['cycling', 'Bike routing (OSRM route base)'],
+  ['forecast', 'Weather forecast endpoint'],
+  ['archive', 'Weather history endpoint'],
+  ['elevation', 'Elevation endpoint'],
+  ['marine', 'Marine weather endpoint']
+];
+const routingModes = ['driving', 'walking', 'cycling'];
+
+function fillProviderFields(value) {
+  for (const [key] of providerFields) $('provider-' + key).value = routingModes.includes(key) ? value.routing[key] : value[key];
+}
+
+function applyProviderSettings(value) {
+  geo.configureProviders(value);
+  providerVersion++;
+  wxCache.clear();
+  waveCache.clear();
+  elevationCache.clear();
+  legCache.clear();
+  render();
+}
+
+function setupProviders() {
+  try {
+    const saved = localStorage.getItem('tp-providers');
+    if (saved) geo.configureProviders(JSON.parse(saved));
+  } catch { notice('Saved provider settings could not be loaded. Using public defaults.'); }
+  $('providerFields').replaceChildren(...providerFields.map(([key, label]) => h('label', { text: label }, h('input', { id: 'provider-' + key, type: 'url', required: true }))));
+  $('settingsBtn').onclick = () => {
+    fillProviderFields(geo.providers);
+    $('providerError').hidden = true;
+    $('menuDlg').close();
+    $('settingsDlg').showModal();
+  };
+  $('providerForm').onsubmit = (event) => {
+    event.preventDefault();
+    if (event.submitter?.value === 'cancel') { $('settingsDlg').close(); return; }
+    try {
+      const value = { routing: {} };
+      for (const [key] of providerFields) {
+        if (routingModes.includes(key)) value.routing[key] = $('provider-' + key).value;
+        else value[key] = $('provider-' + key).value;
+      }
+      const next = normalizeProviders(value);
+      localStorage.setItem('tp-providers', JSON.stringify(next));
+      applyProviderSettings(next);
+      $('settingsDlg').close();
+      toast('Provider settings saved in this browser.');
+    } catch (error) {
+      $('providerError').textContent = error.message;
+      $('providerError').hidden = false;
+    }
+  };
+  $('resetProviders').onclick = () => {
+    try {
+      localStorage.removeItem('tp-providers');
+      applyProviderSettings(defaults);
+      fillProviderFields(defaults);
+      $('providerError').hidden = true;
+      toast('Public providers restored.');
+    } catch { $('providerError').textContent = 'This browser could not reset the saved settings.'; $('providerError').hidden = false; }
+  };
+}
+
+function gpsMessage(text) {
+  $('gpsStatus').textContent = text;
+  $('gpsStatus').hidden = !text;
+}
+
+function stopGps(text = 'Location tracking stopped.') {
+  gpsToken = null;
+  if (gpsWatch !== null) navigator.geolocation?.clearWatch(gpsWatch);
+  gpsWatch = null;
+  mapView?.setLocation(null);
+  $('gps').setAttribute('aria-pressed', 'false');
+  gpsMessage(text);
+}
+
+function toggleGps() {
+  if (gpsToken) { stopGps(); return; }
+  if (!navigator.geolocation) { gpsMessage('Location is unavailable in this browser.'); return; }
+  const token = gpsToken = {};
+  $('gps').setAttribute('aria-pressed', 'true');
+  gpsMessage('Waiting for location permission. Coordinates stay on this device.');
+  try {
+    gpsWatch = navigator.geolocation.watchPosition((position) => {
+      if (gpsToken !== token) return;
+      mapView?.setLocation([position.coords.longitude, position.coords.latitude]);
+      gpsMessage('Location active. Blue dot shown when inside the map view. Press My location to stop.');
+    }, (error) => {
+      if (gpsToken !== token) return;
+      stopGps(error.code === 1 ? 'Location permission denied. Allow location in your browser settings to try again.' : 'Location unavailable. Check your device location settings and try again.');
+    }, { enableHighAccuracy: false, maximumAge: 30000, timeout: 15000 });
+  } catch { stopGps('Location unavailable in this browser.'); }
+}
+
 function wire() {
+  setupProviders();
+  $('gps').onclick = toggleGps;
+  document.addEventListener('visibilitychange', () => { if (document.hidden && gpsToken) stopGps('Location tracking stopped while the page was hidden.'); });
+  window.addEventListener('pagehide', () => { if (gpsToken) stopGps(); });
   $('libraryBtn').onclick = () => { $('importError').hidden = true; renderLibrary(); $('libraryDlg').showModal(); };
   $('undoBtn').onclick = doUndo;
   $('menuBtn').onclick = () => { $('shareInfo').textContent = ''; $('menuDlg').showModal(); };

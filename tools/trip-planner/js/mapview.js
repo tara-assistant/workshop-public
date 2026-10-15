@@ -1,4 +1,5 @@
 // MapLibre map. Keyless: OpenFreeMap vector tiles, OpenTopoMap and EOX Sentinel-2 rasters, AWS terrain.
+import { h } from './util.js';
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 
 const RASTERS = {
@@ -9,8 +10,8 @@ const RASTERS = {
   },
   sat: {
     tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg'],
-    tileSize: 256, maxzoom: 14,
-    attribution: '<a href="https://s2maps.eu">Sentinel-2 cloudless</a> by EOX IT Services GmbH (contains modified Copernicus Sentinel data 2021)'
+    tileSize: 256, maxzoom: 18,
+    attribution: '<a href="https://s2maps.eu">Sentinel-2 cloudless</a> by EOX IT Services GmbH. Contains modified Copernicus Sentinel data 2021'
   }
 };
 
@@ -85,6 +86,7 @@ export class MapView {
     map.addLayer({ id: 'track-casing', type: 'line', source: 'track', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 7 } });
     map.addLayer({ id: 'track-line', type: 'line', source: 'track', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#c2410c', 'line-width': 3.5 } });
     this.loaded = true;
+    this.setLocation(this.location);
     this._applyMode();
     this._applyData();
     this.fit(false);
@@ -204,5 +206,14 @@ export class MapView {
 
   resize() {
     this.map?.resize();
+  }
+
+  setLocation(coords) {
+    this.location = coords;
+    this.locationMarker?.remove();
+    this.locationMarker = null;
+    if (!coords || !this.loaded) return;
+    // Keep the camera fixed so GPS coordinates never trigger location-based tile requests.
+    this.locationMarker = new maplibregl.Marker({ element: h('div', { class: 'gps-dot', role: 'img', 'aria-label': 'Your location' }), anchor: 'center' }).setLngLat(coords).addTo(this.map);
   }
 }

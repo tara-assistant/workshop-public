@@ -37,9 +37,11 @@
             <button class="chip" type="button" data-layer="sat" aria-pressed="false">Satellite</button>
             <button class="chip" type="button" id="tilt" aria-pressed="false">3D</button>
             <button class="chip" type="button" id="fit">Fit</button>
+            <button class="chip" type="button" id="gps" aria-pressed="false">My location</button>
           </div>
           <div class="map-caption" id="mapCaption"></div>
         </div>
+        <p class="hint" id="gpsStatus" role="status" hidden></p>
       </aside>
     </div>
   </main>
@@ -126,6 +128,7 @@
         <button class="btn" id="exportJson" type="button">Download trip JSON</button>
         <button class="btn" id="exportGpx" type="button">Download GPX</button>
         <button class="btn" id="printBtn" type="button">Print</button>
+        <button class="btn" id="settingsBtn" type="button">Settings</button>
       </div>
       <h3>Share by link</h3>
       <p class="hint">The whole trip is packed into the link. Nothing is uploaded.</p>
@@ -139,6 +142,17 @@
       </div>
       <p class="hint" id="mcpStatus" role="status"></p>
     </div>
+  </dialog>
+
+  <dialog id="settingsDlg" aria-labelledby="settingsTitle">
+    <form id="providerForm" class="dlg-form" method="dialog">
+      <div class="dlg-head"><h2 id="settingsTitle">Settings</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
+      <p class="hint">Point the app at your own Nominatim, OSRM or Open-Meteo server. Defaults use public providers.</p>
+      <p class="hint">Enter complete endpoint URLs, including the route profile path for OSRM. Use HTTPS, or HTTP only for localhost or 127.0.0.1. No credentials, query or fragment.</p>
+      <div id="providerFields" class="provider-fields"></div>
+      <p class="error" id="providerError" role="alert" hidden></p>
+      <div class="row"><button class="btn btn-primary" value="ok">Save settings</button><button class="btn" type="button" id="resetProviders">Reset to defaults</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>
+    </form>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
