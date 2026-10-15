@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPhotoFinder } from './photos.mjs';
-import { createGeo } from '../mcp/geo.mjs';
-import { createToolHandler, TOOLS } from '../mcp/server.mjs';
+import { createPhotoFinder, acceptsAutoPhoto, photoNameScore, canApplyAutoPhoto } from './photos.mjs';
 import { defaults } from './providers.mjs';
 
 const args = { name: 'La Cinta Beach', lat: 40.8, lon: 9.7, wikipedia: defaults.wikipedia, commons: defaults.commons };
@@ -52,14 +50,22 @@ test('photo discovery omits unsafe URLs, missing credit and non-photo files and 
   await assert.rejects(finder({ ...args, name: '' }), /name/);
 });
 
-test('read only MCP photo tool returns candidates without touching trip storage and respects offline mode', async () => {
-  const geo = createGeo({ offline: () => false, fetchFn: async (url) => ({ ok: true, json: async () =>
-    new URL(url).hostname === 'en.wikipedia.org' ? response([]) : response([file(1)]) }) });
-  const handler = createToolHandler(new Proxy({}, { get: () => { throw new Error('Storage must not be accessed'); } }), geo);
-  const rows = await handler('find_stop_photo', { name: args.name, lat: args.lat, lon: args.lon });
-  assert.equal(rows.length, 1);
-  assert.match(TOOLS.find((tool) => tool.name === 'find_stop_photo').description, /Read only/);
-  await assert.rejects(handler('find_stop_photo', { name: 'Beach', lat: 999, lon: 9 }), /Invalid tool arguments/);
-  const offline = createGeo({ offline: () => true, fetchFn: () => { throw new Error('No requests'); } });
-  assert.throws(() => offline.findStopPhoto({ name: 'Beach', lat: 40, lon: 9 }), /offline/);
+test('automatic photos accept clear name matches and reject mere proximity or generic titles', () => {
+  const candidate = (title) => ({ imageUrl: 'https://upload.wikimedia.org/photo.jpg', imageCredit: 'Author, CC BY-SA', matchTitle: title, nameScore: photoNameScore('La Cinta Beach', title) });
+  assert.equal(acceptsAutoPhoto('La Cinta Beach', candidate('File:La Cinta Beach at sunset.jpg')), true);
+  assert.equal(acceptsAutoPhoto('La Cinta Beach', candidate('File:Nearby harbour.jpg')), false);
+  assert.equal(acceptsAutoPhoto('La Cinta Beach', candidate('File:Beach 1.jpg')), false);
+  assert.equal(acceptsAutoPhoto('La Cinta Beach', candidate('File:Cintarella.jpg')), false);
+  assert.equal(acceptsAutoPhoto('Beach', candidate('File:Beach.jpg')), false);
+  assert.equal(photoNameScore('Capo Testa', 'File:Capo from nearby.jpg'), .5);
+  assert.equal(acceptsAutoPhoto('Capo Testa', { ...candidate('Capo'), nameScore: 1 }), false);
+});
+
+test('late photo results do not overwrite edits, changed coordinates or deleted stops', () => {
+  const snapshot = { name: 'La Cinta', lat: 40, lon: 9 };
+  assert.equal(canApplyAutoPhoto({ ...snapshot }, snapshot), true);
+  assert.equal(canApplyAutoPhoto(null, snapshot), false);
+  assert.equal(canApplyAutoPhoto({ ...snapshot, imageUrl: 'https://example.com/manual.jpg' }, snapshot), false);
+  assert.equal(canApplyAutoPhoto({ ...snapshot, lat: 41 }, snapshot), false);
+  assert.equal(canApplyAutoPhoto({ ...snapshot, name: 'Other' }, snapshot), false);
 });

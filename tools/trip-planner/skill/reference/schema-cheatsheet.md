@@ -50,4 +50,4 @@ Authority: `schema/trip.schema.json`, checked 2026-10-14. `validateTrip(trip, sc
 
 The schema allows empty day and stop arrays, empty booking labels and optional weather fields. A useful itinerary should avoid empty days, empty labels and weather without a stated kind or source. No native fields exist for route legs, difficulty, elevation gain, opening hours, admission prices or weather provenance. Put sourced details in `desc`, `source`, `links` and `tips`, within their limits. A `verified` date certifies only the checks described alongside it.
 
-Photo candidates from find_stop_photo do not change schema v1. Save imageUrl and imageCredit with update_stop. Preserve the checked sourceUrl as a web link when attribution requires it. The connector now has 13 tools.
+Photo candidates do not change schema v1. Save `imageUrl` and `imageCredit` on the stop. Preserve the checked source page as a web link when attribution requires it.

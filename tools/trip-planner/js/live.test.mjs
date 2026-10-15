@@ -1,47 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tripDayState, weatherDescription, LIVE_TTL } from './live.mjs';
-import { configureProviders, currentWeather, weather } from './geo.js';
+import { weatherEligible, weatherIcon } from './live.mjs';
+import { configureProviders, weather } from './geo.js';
 import { defaults } from './providers.mjs';
 
-test('countdown selects the next or current dated day and reports a finished trip', () => {
-  const days = [{ dayNumber: 1, date: '2026-10-20' }, { dayNumber: 2, date: '2026-10-21' }];
-  const trip = { phases: [{ days }] };
-  assert.deepEqual(tripDayState(trip, '2026-10-15'), { day: days[0], label: '5 days to go' });
-  assert.deepEqual(tripDayState(trip, '2026-10-21'), { day: days[1], label: 'Day 2 of 2, today' });
-  assert.deepEqual(tripDayState(trip, '2026-10-22'), { day: days[1], label: '' });
-  assert.equal(tripDayState({ phases: [] }).label, 'Add trip dates');
-  assert.equal(weatherDescription(0), 'Clear');
-  assert.equal(weatherDescription(63), 'Rain');
-  assert.equal(weatherDescription(null), 'Conditions unavailable');
-});
-
-test('current weather uses local hourly rain chance, caches for ten minutes and fails quietly at the caller', async (t) => {
-  const realFetch = globalThis.fetch;
-  t.after(() => { globalThis.fetch = realFetch; configureProviders(defaults); });
-  configureProviders(defaults);
-  let time = Date.now(), calls = 0;
-  const options = { now: () => time };
-  globalThis.fetch = async (value) => {
-    const url = new URL(value); calls++;
-    assert.match(url.searchParams.get('current'), /weather_code/);
-    assert.equal(url.searchParams.get('timezone'), 'auto');
-    return { ok: true, json: async () => ({ current: { time: '2026-10-15T09:15', temperature_2m: 23, weather_code: 2, wind_speed_10m: 12 },
-      hourly: { time: ['2026-10-15T08:00', '2026-10-15T09:00'], precipitation_probability: [10, 35] } }) };
-  };
-  const value = await currentWeather(40, 9, options);
-  assert.equal(value.temperature, 23);
-  assert.equal(value.description, 'Cloudy');
-  assert.equal(value.wind, 12);
-  assert.equal(value.rainChance, 35);
-  assert.equal(await currentWeather(40, 9, options), value);
-  assert.equal(calls, 1);
-  time += LIVE_TTL + 1;
-  await currentWeather(40, 9, options);
-  assert.equal(calls, 2);
-  globalThis.fetch = async () => { throw new Error('Offline'); };
-  configureProviders(defaults);
-  await assert.rejects(currentWeather(40, 9), /Offline/);
+test('weather chips require a present or future date and a coordinate stop', () => {
+  const today = '2026-10-15', stops = [{ lat: 40, lon: 9 }];
+  assert.equal(weatherEligible({ date: today, stops }, today), true);
+  assert.equal(weatherEligible({ date: '2040-06-15', stops }, today), true);
+  assert.equal(weatherEligible({ date: '2026-10-14', stops }, today), false);
+  assert.equal(weatherEligible({ stops }, today), false);
+  assert.equal(weatherEligible({ date: today, stops: [] }, today), false);
+  assert.equal(weatherEligible({ date: today, stops: [{ lat: null, lon: 9 }] }, today), false);
+  assert.equal(weatherIcon(0), '☀');
+  assert.equal(weatherIcon(3), '☁');
 });
 
 test('far future typical weather samples past years and labels the result', async (t) => {

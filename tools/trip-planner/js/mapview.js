@@ -49,27 +49,6 @@ export class MapView {
       attributionControl: false, maxPitch: 75, dragRotate: true
     });
     this.map = map;
-    const reset = {
-      onAdd: () => {
-        const group = h('div', { class: 'maplibregl-ctrl maplibregl-ctrl-group' });
-        const button = h('button', { type: 'button', 'aria-label': 'Reset map view', title: 'Reset map view', onClick: () => this.handlers.onReset?.() });
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('width', '22');
-        svg.setAttribute('height', '22');
-        svg.setAttribute('aria-hidden', 'true');
-        const path = document.createElementNS(svg.namespaceURI, 'path');
-        path.setAttribute('d', 'M4 10a8 8 0 1 1 1 7M4 4v6h6');
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', 'currentColor');
-        path.setAttribute('stroke-width', '2');
-        svg.append(path); button.append(svg); group.append(button);
-        return group;
-      },
-      onRemove: () => {}
-    };
-    map.addControl(reset, 'bottom-right');
-    map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }), 'bottom-right');
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
     // The credits live inside the map as a small info button, closed until tapped.
     map.once('load', () => {
@@ -77,7 +56,6 @@ export class MapView {
       credits?.classList.remove('maplibregl-compact-show');
       credits?.removeAttribute('open');
     });
-    map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.on('load', () => this._onLoad());
     map.on('error', (event) => {
       const status = event?.error?.status;
@@ -111,7 +89,7 @@ export class MapView {
     map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 4.5 } });
     map.addSource('track', { type: 'geojson', data: EMPTY });
     map.addLayer({ id: 'track-casing', type: 'line', source: 'track', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 7 } });
-    map.addLayer({ id: 'track-line', type: 'line', source: 'track', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#c2410c', 'line-width': 3.5 } });
+    map.addLayer({ id: 'track-line', type: 'line', source: 'track', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': getComputedStyle(document.documentElement).getPropertyValue('--leaf').trim(), 'line-width': 3.5 } });
     this.loaded = true;
     this.setLocation(this.location);
     this._applyMode();

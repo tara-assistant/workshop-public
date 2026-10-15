@@ -3,7 +3,7 @@
 
 import { normalizeProviders } from './providers.mjs';
 import { createPhotoFinder } from './photos.mjs';
-import { LIVE_TTL, weatherDescription } from './live.mjs';
+import { LIVE_TTL } from './live.mjs';
 
 export const providers = normalizeProviders();
 
@@ -78,7 +78,7 @@ const day = (iso, shiftYears = 0) => {
 };
 
 function daysFromToday(iso) {
-  return Math.round((new Date(iso + 'T00:00:00Z') - new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')) / 86400000);
+  return Math.round((new Date(iso + 'T00:00:00Z') - new Date(new Date().toLocaleDateString('en-CA') + 'T00:00:00Z')) / 86400000);
 }
 
 export const inForecastWindow = (iso) => daysFromToday(iso) >= 0 && daysFromToday(iso) <= 13;
@@ -93,14 +93,14 @@ export async function weather(lat, lon, iso, { signal } = {}) {
   const cached = cache.get(key);
   if (cached && (cached.kind === 'typical' ? !inForecastWindow(iso) : inForecastWindow(iso) && Date.now() - Date.parse(cached.fetchedAt) < LIVE_TTL)) return cached;
   let out = null;
-  const daily = 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset';
+  const daily = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset';
   if (inForecastWindow(iso)) {
     const url = `${forecastBase}?latitude=${lat}&longitude=${lon}&daily=${daily}&timezone=auto&start_date=${iso}&end_date=${iso}`;
     const j = await throttled(() => getJson(url, signal), 250, 'meteo');
     const d = j.daily;
     if (d?.time?.length) {
       out = {
-        kind: 'forecast', tMax: d.temperature_2m_max[0], tMin: d.temperature_2m_min[0],
+        kind: 'forecast', code: d.weather_code?.[0], tMax: d.temperature_2m_max[0], tMin: d.temperature_2m_min[0],
         rainChance: d.precipitation_probability_max[0], windMax: d.wind_speed_10m_max[0],
         sunrise: hm(d.sunrise[0]), sunset: hm(d.sunset[0]), fetchedAt: new Date().toISOString()
       };
@@ -111,14 +111,14 @@ export async function weather(lat, lon, iso, { signal } = {}) {
       const anchor = Math.min(Number(iso.slice(0, 4)), new Date().getUTCFullYear()) + iso.slice(4);
       const dd = day(String(anchor), y);
       if (!dd) continue;
-      const url = `${archiveBase}?latitude=${lat}&longitude=${lon}&start_date=${dd}&end_date=${dd}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset&timezone=auto`;
+      const url = `${archiveBase}?latitude=${lat}&longitude=${lon}&start_date=${dd}&end_date=${dd}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset&timezone=auto`;
       rows.push(throttled(() => getJson(url, signal), 250, 'meteo').catch(() => null));
     }
     const got = (await Promise.all(rows)).map((j) => j?.daily).filter((d) => d?.time?.length);
     if (got.length) {
       const avg = (k) => got.reduce((s, d) => s + (d[k][0] ?? 0), 0) / got.length;
       out = {
-        kind: 'typical', tMax: avg('temperature_2m_max'), tMin: avg('temperature_2m_min'),
+        kind: 'typical', code: got[0].weather_code?.[0], tMax: avg('temperature_2m_max'), tMin: avg('temperature_2m_min'),
         rainChance: Math.round(got.filter((d) => (d.precipitation_sum[0] ?? 0) >= 1).length / got.length * 100),
         windMax: avg('wind_speed_10m_max'), sunrise: hm(got[0].sunrise[0]), sunset: hm(got[0].sunset[0]),
         fetchedAt: new Date().toISOString(), years: got.length
@@ -177,22 +177,4 @@ export function trackStats(track) {
 const photoFinder = createPhotoFinder((url) => throttled(() => getJson(url), 300, 'photos'));
 export function findStopPhoto(name, lat, lon) {
   return photoFinder({ name, lat, lon, wikipedia: providers.wikipedia, commons: providers.commons });
-}
-
-export async function currentWeather(lat, lon, { now = Date.now } = {}) {
-  const url = new URL(providers.forecast);
-  url.search = new URLSearchParams({ latitude: String(lat), longitude: String(lon), timezone: 'auto',
-    current: 'temperature_2m,weather_code,wind_speed_10m', hourly: 'precipitation_probability', forecast_days: '1' });
-  const key = url.href;
-  const hit = cache.get(key);
-  if (hit && now() - Date.parse(hit.fetchedAt) < LIVE_TTL) return hit;
-  const data = await throttled(() => getJson(key), 250, 'meteo');
-  const current = data.current;
-  if (!current || !Number.isFinite(current.temperature_2m)) return null;
-  const hour = current.time?.slice(0, 13);
-  const index = data.hourly?.time?.findIndex((time) => time.slice(0, 13) === hour) ?? -1;
-  const out = { temperature: current.temperature_2m, description: weatherDescription(current.weather_code),
-    wind: current.wind_speed_10m, rainChance: data.hourly?.precipitation_probability?.[index], fetchedAt: new Date(now()).toISOString() };
-  cache.set(key, out);
-  return out;
 }

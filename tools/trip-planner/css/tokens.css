@@ -1,34 +1,20 @@
-/* One token library for the whole app. Change a look here, not in components. */
+/* One shared library for colour, shape, spacing and type. */
 :root {
-  --paper: #f7f4eb;
-  --panel: #fffefa;
-  --ink: #17352d;
-  --muted: #5d716a;
-  --line: #d9e0d6;
-  --leaf: #286f51;
-  --warn: #a44c21;
-  --warn-bg: #f7e4d7;
-  --ok-bg: #e5f1e8;
-  --sand: #efe2cb;
-  --focus: #a44c21;
-  --phase-1: #1b4965;
-  --phase-2: #7b2d8e;
-  --phase-3: #b44215;
-  --phase-4: #2d6a4f;
-  --phase-5: #9a6b00;
-  --phase-6: #0f766e;
-  --phase-7: #8b1e3f;
-  --phase-8: #475569;
-
+  --paper: #F7F6F2; --panel: #FFFFFF; --ink: #24312F; --muted: #747D78;
+  --leaf: #347C68; --ok-bg: #E8F3EE; --line: #EAE8E2;
+  --warn: #934832; --warn-bg: #FAEEE7; --focus: #347C68;
+  --phase-1: #1b4965; --phase-2: #7b2d8e; --phase-3: #b44215;
+  --phase-4: #2d6a4f; --phase-5: #9a6b00; --phase-6: #0f766e;
+  --phase-7: #8b1e3f; --phase-8: #475569;
   --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-head: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
-  --r-sm: 8px; --r-md: 12px; --r-lg: 18px;
-  --tap: 44px;
-  --shadow: 0 6px 24px rgba(23, 53, 45, 0.12);
-  --topbar-h: 56px;
+  --font-head: var(--font-body);
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s20: 20px; --s5: 24px; --s6: 32px;
+  --r-sm: 16px; --r-md: 16px; --r-lg: 24px; --r-pill: 999px;
+  --tap: 44px; --gutter: 20px; --map-height: 150px;
+  --shadow: 0 6px 22px rgba(26,44,38,0.08);
+  --title-size: 28px; --title-line: 34px; --day-size: 21px; --day-line: 26px;
+  --stop-size: 16px; --stop-line: 22px; --body-size: 14px; --body-line: 20px;
+  --meta-size: 13px; --meta-line: 18px; --chip-size: 12px; --chip-line: 16px;
+  --motion: 200ms;
 }
-
-:root{--map-height:30dvh;--card-shadow:0 1px 2px rgba(23,53,45,.06),0 4px 14px rgba(23,53,45,.07)}
+@media(max-width:340px){:root{--gutter:16px;--title-size:24px;--title-line:30px}}

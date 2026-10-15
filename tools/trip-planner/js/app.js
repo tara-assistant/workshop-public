@@ -1,15 +1,18 @@
 // Trip Planner app. Static, keyless. All user text goes in through textContent via h().
 import * as store from './store.js';
-import { h, safeUrl, stopMapLinks, fmtDay, fmtRange, debounce, TYPE_LABEL, chipLabels, PALETTE, allStops, allDays, progress } from './util.js';
+import { h, safeUrl, stopMapLinks, fmtDay, fmtRange, TYPE_LABEL, PALETTE, allStops, allDays, progress } from './util.js';
 import { MapView } from './mapview.js';
 import * as geo from './geo.js';
 import { parseGpx, toGpx } from './gpx.js';
 import { defaults, normalizeProviders } from './providers.mjs';
-import { LIVE_TTL, tripDayState } from './live.mjs';
+import { weatherIcon, weatherEligible } from './live.mjs';
+import { acceptsAutoPhoto, canApplyAutoPhoto } from './photos.mjs';
+import { reorderBases, remapDayState, remapPacking } from './bases.mjs';
 
 const $ = (id) => document.getElementById(id);
 
 const ui = {
+  editMode: localStorage.getItem('tp-edit-mode') === '1',
   phase: 'all',           // phase filter: 'all' or phase id
   open: new Set(),        // open day numbers
   focusDay: null,         // day used for routing
@@ -20,7 +23,6 @@ const ui = {
 };
 
 const wxCache = new Map();
-const waveCache = new Map();
 const elevationCache = new Map();
 let providerVersion = 0;
 let gpsWatch = null;
@@ -29,7 +31,7 @@ let routeVer = 0;
 let routeCtl = null;
 const legCache = new Map();
 let mapView = null;
-let mcp = null;
+let weatherRunning = false;
 
 /* ---------- helpers ---------- */
 
@@ -79,121 +81,142 @@ const findStop = (trip, id) => {
   return null;
 };
 
+const accentColor = () => getComputedStyle(document.documentElement).getPropertyValue('--leaf').trim();
+
 const visiblePhases = (trip) => trip.phases.map((phase, pi) => ({ phase, pi })).filter(({ phase }) => ui.phase === 'all' || phase.id === ui.phase);
 
 /* ---------- render ---------- */
 
 function renderHero(trip) {
   const p = progress(trip);
-  const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
   $('hero').replaceChildren(
-    h('h1', { text: trip.title, title: trip.title }),
-    liveStrip(trip),
-    h('p', { class: 'meta', text: [trip.destination, fmtRange(trip.startDate, trip.endDate), `${allDays(trip).length} days, ${p.total} stops`].filter(Boolean).join(' · ') }),
-    trip.summary && h('p', { class: 'summary', text: trip.summary }),
-    trip.note && h('p', { class: 'banner', text: trip.note }),
-    h('div', { class: 'progress' },
-      h('div', { class: 'bar', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': pct, 'aria-label': 'Stops visited' }, h('span', { style: `width:${pct}%` })),
-      h('span', { text: `${p.done} of ${p.total} visited` }),
-      p.done ? h('button', { class: 'btn btn-small', type: 'button', text: 'Clear ticks', onClick: clearTicks }) : null
-    )
+    h('h1', { text: trip.title }),
+    h('p', { class: 'meta', text: fmtRange(trip.startDate, trip.endDate) || trip.destination || '' }),
+    h('span', { class: 'progress-count', text: `${p.done}/${p.total}`, 'aria-label': `${p.done} of ${p.total} stops visited` })
   );
 }
 
 function renderPhaseNav(trip) {
   const nav = $('phaseNav');
-  nav.hidden = trip.phases.length < 2;
+  nav.hidden = false;
   nav.replaceChildren(
-    h('button', { class: 'chip', type: 'button', 'aria-pressed': ui.phase === 'all', text: 'All', onClick: () => { ui.phase = 'all'; render(); } }),
+    h('button', { class: 'chip', type: 'button', 'aria-pressed': String(ui.phase === 'all'), text: 'All', onClick: () => { ui.phase = 'all'; render(); } }),
     ...trip.phases.map((phase, pi) => h('button', {
-      class: 'chip', type: 'button', style: `--c:${colorOf(trip, phase, pi)}`, 'aria-pressed': ui.phase === phase.id, text: phase.title,
+      class: 'chip', type: 'button', 'aria-pressed': String(ui.phase === phase.id),
       onClick: () => { ui.phase = phase.id; render(); }
-    }))
+    }, h('span', { class: 'phase-dot', style: `--c:${colorOf(trip, phase, pi)}`, 'aria-hidden': 'true' }), phase.title)),
+    h('button', { class: 'chip', type: 'button', text: '+', 'aria-label': 'Add a base', onClick: addPhase })
   );
 }
 
 const elevationKey = (stop) => `${stop.lon.toFixed(5)},${stop.lat.toFixed(5)}`;
 const weatherKey = (trip, day) => {
   const boat = day.stops.find((s) => s.type === 'boat');
-  return `${providerVersion}|${trip.id}|${day.dayNumber}|${day.date}|${day.stops[0] ? elevationKey(day.stops[0]) : ''}|boat:${boat ? elevationKey(boat) : ''}`;
+  return `${providerVersion}|${trip.id}|${day.dayNumber}|${day.date}|${geo.inForecastWindow(day.date)}|${day.stops[0] ? elevationKey(day.stops[0]) : ''}|boat:${boat ? elevationKey(boat) : ''}`;
 };
 
 function wxLine(day) {
-  const w = wxCache.get(weatherKey(store.active(), day));
-  const el = h('div', { class: 'wx', dataset: { wx: day.dayNumber }, hidden: !w });
-  if (w) fillWx(el, w, day);
+  const w = weatherEligible(day) ? wxCache.get(weatherKey(store.active(), day)) : null;
+  const el = h('p', { class: 'wx', dataset: { wx: day.dayNumber }, hidden: !w });
+  if (w) fillWx(el, w);
   return el;
 }
 
-function fillWx(el, w, day) {
-  const r = (n) => Math.round(n);
-  const hasHike = day.stops.some((s) => s.type === 'hike');
-  el.replaceChildren(...[
-    h('span', {}, h('b', { text: `${r(w.tMin)} to ${r(w.tMax)} °C` })),
-    h('span', { text: `Rain ${r(w.rainChance)}%` }),
-    h('span', { text: `Wind to ${r(w.windMax)} km/h` }),
-    w.sunrise && h('span', { text: `Sun ${w.sunrise} to ${w.sunset}` }),
-    day.stops.some((s) => s.type === 'boat') && geo.inForecastWindow(day.date) && Number.isFinite(waveCache.get(weatherKey(store.active(), day))) && h('span', { text: `Waves up to ${waveCache.get(weatherKey(store.active(), day))} m` }),
-    h('span', { class: 'wx-note', text: (w.kind === 'forecast' ? 'Forecast.' : `Typical for these dates, average of ${w.years} recent years. Not a forecast.`) + (hasHike ? ' The forecast is for one point. Check the local mountain forecast before a hike.' : '') })
-  ].filter(Boolean));
+function fillWx(el, w) {
+  const r = Math.round;
+  el.textContent = `${w.kind === 'forecast' ? 'Forecast.' : `Typical for these dates, average of ${w.years} recent years.`} High ${r(w.tMax)}°, low ${r(w.tMin)}°. Rain chance ${r(w.rainChance)}%. Wind to ${r(w.windMax)} km/h. Sunrise ${w.sunrise || 'unavailable'}, sunset ${w.sunset || 'unavailable'}. Weather is for one point, the first stop of this day. Check local conditions before a hike or boat trip.`;
   el.hidden = false;
 }
 
-const MAP_NAMES = { OSM: 'OpenStreetMap', Google: 'Google Maps' };
-function mapChoice(label, links, local) {
-  const items = links.map((link) => ({ url: link.url, name: MAP_NAMES[link.label.split(' ')[0]] || link.label }));
-  if (local) items.unshift({ name: 'This map', onClick: local });
-  if (!items.length) return null;
-  if (items.length === 1 && items[0].url) return h('a', { class: 'menu-single', href: items[0].url, target: '_blank', rel: 'noopener noreferrer', text: label, title: label + ' in ' + items[0].name });
-  return h('details', { class: 'menu' }, h('summary', { text: label }),
-    h('div', { class: 'menu-items' }, items.map((item) => item.url
-      ? h('a', { href: item.url, target: '_blank', rel: 'noopener noreferrer', text: item.name })
-      : h('button', { type: 'button', text: item.name, onClick: (event) => { event.currentTarget.closest('details').open = false; item.onClick(); } }))));
+function weatherChip(day) {
+  const w = weatherEligible(day) ? wxCache.get(weatherKey(store.active(), day)) : null;
+  const el = h('span', { class: 'wx-chip', dataset: { weatherChip: day.dayNumber }, hidden: !w });
+  if (w) fillWeatherChip(el, w);
+  return el;
 }
 
-function setMapCollapsed(collapsed) {
-  document.querySelector('.map-panel').classList.toggle('map-collapsed', collapsed);
-  const button = $('mapSize');
-  button.setAttribute('aria-expanded', String(!collapsed));
-  button.querySelector('.map-handle-label').textContent = collapsed ? 'Show map' : 'Hide map';
-  try { localStorage.setItem('tp-map-collapsed', collapsed ? '1' : '0'); } catch { /* storage is optional */ }
+function fillWeatherChip(el, w) {
+  el.replaceChildren(...[h('span', { text: `${weatherIcon(w.code)} ${Math.round(w.tMax)}° ${Math.round(w.tMin)}°` }),
+    w.kind === 'typical' ? h('small', { text: 'typical' }) : null].filter(Boolean));
+  el.setAttribute('aria-label', `${w.kind}, high ${Math.round(w.tMax)} degrees, low ${Math.round(w.tMin)} degrees`);
+  el.hidden = false;
+}
+
+function mapChoice(links) {
+  const summary = h('summary', { text: 'Directions' });
+  const items = h('div', { class: 'menu-items', popover: 'manual', 'aria-label': 'Open directions with' }, [...links].reverse().map((link) =>
+    h('a', { href: link.url, target: '_blank', rel: 'noopener noreferrer', text: link.label.startsWith('Google') ? 'Google Maps' : 'OpenStreetMap', onClick: () => { chooser.open = false; } })));
+  const chooser = h('details', { class: 'menu', onToggle: () => {
+    if (!chooser.isConnected) return;
+    if (!chooser.open) { items.hidePopover(); return; }
+    document.querySelectorAll('details.menu[open]').forEach((other) => { if (other !== chooser) other.open = false; });
+    items.showPopover();
+    const anchor = summary.getBoundingClientRect();
+    const bottom = document.querySelector('.add-stop-bar').getBoundingClientRect().top - 8;
+    const height = items.offsetHeight;
+    items.style.left = `${Math.max(8, Math.min(anchor.left, innerWidth - items.offsetWidth - 8))}px`;
+    items.style.top = `${anchor.bottom + height + 4 > bottom ? Math.max(8, anchor.top - height - 4) : anchor.bottom + 4}px`;
+  } }, summary, items);
+  return chooser;
+}
+
+function setMapExpanded(expanded) {
+  document.querySelector('.map-panel').classList.toggle('map-expanded', expanded);
+  $('mapSize').setAttribute('aria-expanded', String(expanded));
+  $('mapSize').querySelector('.map-handle-label').textContent = expanded ? 'Collapse map' : 'Expand map';
+  localStorage.setItem('tp-map-expanded', expanded ? '1' : '0');
   setTimeout(() => mapView?.resize(), 240);
 }
 
+const TYPE_ICON = { sight: '⌖', gem: '◇', hike: '△', dining: '♧', cafe: '☕', swim: '≈', boat: '⚓', lodging: '⌂', transport: '↗' };
+
 function renderStop(trip, phase, pi, day, stop, index) {
-  const c = colorOf(trip, phase, pi);
-  const dir = day.mode || 'driving';
-  const links = [
-    mapChoice('Show', stopMapLinks(stop.lat, stop.lon, dir, mapsChoice()).filter((link) => link.label.endsWith(' map')), () => { setMapCollapsed(false); selectStop(stop.id, { scroll: false }); }),
-    mapChoice('Directions', stopMapLinks(stop.lat, stop.lon, dir, mapsChoice()).filter((link) => link.label.endsWith(' directions'))),
-    ...(stop.links || []).map((l) => { const u = safeUrl(l.url); return u ? h('a', { href: u, target: '_blank', rel: 'noopener noreferrer', text: l.label || 'Link' }) : null; })
-  ];
   const img = safeUrl(stop.imageUrl);
-  const card = h('article', { class: 'stop', id: 'stop-' + stop.id, style: `--c:${c}`, dataset: { selected: ui.selectedId === stop.id, done: !!stop.visited } },
+  const select = () => { if (innerWidth < 960) setMapExpanded(true); selectStop(stop.id, { scroll: false }); };
+  const card = h('article', { class: 'stop', id: 'stop-' + stop.id, dataset: { selected: ui.selectedId === stop.id, done: !!stop.visited, expanded: false },
+    onClick: (event) => {
+      if (event.target.closest('button,a,summary,details')) return;
+      if (event.target.closest('.stop-desc')) {
+        card.dataset.expanded = String(card.dataset.expanded !== 'true');
+        card.querySelector('.stop-name').setAttribute('aria-expanded', card.dataset.expanded);
+      }
+      select();
+    }
+  },
     h('div', { class: 'stop-top' },
-      h('button', { class: 'check', type: 'button', 'aria-pressed': !!stop.visited, 'aria-label': `Mark ${stop.name} visited`, onClick: () => toggleVisited(stop.id) }, h('span', { text: '✓' })),
+      h('button', { class: 'check', type: 'button', 'aria-pressed': String(!!stop.visited), 'aria-label': `Mark ${stop.name} visited`, onClick: () => toggleVisited(stop.id) }, h('span', { text: '✓' })),
       h('div', { class: 'stop-main' },
-        h('button', { class: 'stop-name', type: 'button', text: `${index + 1}. ${stop.name}`, onClick: () => selectStop(stop.id, { scroll: false }) }),
-        h('div', { class: 'stop-time', text: [stop.time, stop.dwell ? `about ${stop.dwell} min` : ''].filter(Boolean).join(' · ') })
+        h('button', { class: 'stop-name', type: 'button', text: stop.name, 'aria-expanded': 'false', onClick: (event) => {
+          card.dataset.expanded = String(card.dataset.expanded !== 'true');
+          event.currentTarget.setAttribute('aria-expanded', card.dataset.expanded);
+          select();
+        } }),
+        h('p', { class: 'stop-time', text: [stop.time, stop.dwell ? `${stop.dwell} min` : ''].filter(Boolean).join(' · ') }),
+        stop.desc && h('p', { class: 'stop-desc', text: stop.desc })
       ),
-      h('button', { class: 'drag-handle', type: 'button', text: '⠿', 'aria-label': `Drag ${stop.name} to reorder. Or use Up and Down.`, onPointerDown: (e) => startStopDrag(e, stop.id) })
+      img ? h('img', { class: 'stop-photo', src: img, alt: stop.name, loading: 'lazy', referrerpolicy: 'no-referrer', onError: (e) => { e.target.replaceWith(typeIcon(stop)); } }) : typeIcon(stop)
     ),
-    img && h('img', { class: 'stop-photo', src: img, alt: stop.name, loading: 'lazy', referrerpolicy: 'no-referrer', onError: (e) => { e.target.remove(); } }),
-    img && stop.imageCredit && h('p', { class: 'credit', text: 'Photo: ' + stop.imageCredit }),
-    stop.desc && h('p', { class: 'stop-desc', text: stop.desc }),
-    h('p', { class: 'stop-elevation ele', dataset: { elevation: elevationKey(stop) }, hidden: !Number.isFinite(elevationCache.get(elevationKey(stop))), text: Number.isFinite(elevationCache.get(elevationKey(stop))) ? `Elevation ${Math.round(elevationCache.get(elevationKey(stop)))} m` : '' }),
-    h('div', { class: 'chips' }, chipLabels(stop).map((label, i) => h('span', { class: 'tag' + (i === 0 ? ' type' : ''), text: label }))),
-    stop.track?.length > 1 && trackBlock(stop),
-    h('div', { class: 'links' }, links),
-    h('div', { class: 'stop-edit' },
-      h('button', { class: 'btn btn-small', type: 'button', text: 'Edit', onClick: () => openStopDialog(day.dayNumber, stop.id) }),
-      h('button', { class: 'btn btn-small', type: 'button', text: 'Up', 'aria-label': `Move ${stop.name} up`, disabled: index === 0, onClick: () => moveStop(stop.id, -1) }),
-      h('button', { class: 'btn btn-small', type: 'button', text: 'Down', 'aria-label': `Move ${stop.name} down`, disabled: index === day.stops.length - 1, onClick: () => moveStop(stop.id, 1) }),
-      stop.type === 'hike' ? h('button', { class: 'btn btn-small', type: 'button', text: stop.track?.length ? 'Replace GPX' : 'Add GPX track', onClick: () => attachGpx(stop.id) }) : null,
-      h('button', { class: 'btn btn-small btn-danger', type: 'button', text: 'Delete', onClick: () => deleteStop(stop.id) })
+    h('div', { class: 'links' }, mapChoice(stopMapLinks(stop.lat, stop.lon, day.mode || 'driving').filter((link) => link.label.endsWith(' directions')))),
+    h('div', { class: 'stop-details' },
+      img && stop.imageCredit && h('p', { class: 'credit', text: 'Photo: ' + stop.imageCredit }),
+      h('p', { class: 'stop-elevation ele', dataset: { elevation: elevationKey(stop) }, hidden: !Number.isFinite(elevationCache.get(elevationKey(stop))), text: Number.isFinite(elevationCache.get(elevationKey(stop))) ? `Elevation ${Math.round(elevationCache.get(elevationKey(stop)))} m` : '' }),
+      stop.track?.length > 1 && trackBlock(stop),
+      ...(stop.links || []).map((link) => safeUrl(link.url) ? h('a', { href: safeUrl(link.url), target: '_blank', rel: 'noopener noreferrer', text: link.label || 'Website' }) : null)
+    ),
+    ui.editMode && h('button', { class: 'drag-handle', type: 'button', text: '⠿', 'aria-label': `Drag ${stop.name} to reorder`, onPointerDown: (e) => startStopDrag(e, stop.id) }),
+    ui.editMode && h('div', { class: 'stop-edit' },
+      h('button', { class: 'btn', type: 'button', text: 'Edit', onClick: () => openStopDialog(day.dayNumber, stop.id) }),
+      h('button', { class: 'btn', type: 'button', text: 'Move up', 'aria-label': `Move ${stop.name} up`, disabled: index === 0, onClick: () => moveStop(stop.id, -1) }),
+      h('button', { class: 'btn', type: 'button', text: 'Move down', 'aria-label': `Move ${stop.name} down`, disabled: index === day.stops.length - 1, onClick: () => moveStop(stop.id, 1) }),
+      stop.type === 'hike' && h('button', { class: 'btn', type: 'button', text: stop.track?.length ? 'Replace GPX' : 'Add GPX track', onClick: () => attachGpx(stop.id) }),
+      h('button', { class: 'btn btn-danger', type: 'button', text: 'Delete', onClick: () => deleteStop(stop.id) })
     )
   );
   return card;
+}
+
+function typeIcon(stop) {
+  return h('span', { class: 'type-icon', text: TYPE_ICON[stop.type] || '⌖', role: 'img', 'aria-label': TYPE_LABEL[stop.type] || 'Stop' });
 }
 
 function trackBlock(stop) {
@@ -222,11 +245,11 @@ function profileSvg(track) {
   svg.setAttribute('aria-label', `Elevation profile from ${Math.round(lo)} to ${Math.round(hi)} metres`);
   const area = document.createElementNS(NS, 'path');
   area.setAttribute('d', `${d}L${W},${H}L0,${H}Z`);
-  area.setAttribute('fill', '#c2410c22');
+  area.setAttribute('fill', 'var(--ok-bg)');
   const line = document.createElementNS(NS, 'path');
   line.setAttribute('d', d);
   line.setAttribute('fill', 'none');
-  line.setAttribute('stroke', '#c2410c');
+  line.setAttribute('stroke', 'var(--leaf)');
   line.setAttribute('stroke-width', '2');
   svg.append(area, line);
   return svg;
@@ -236,14 +259,15 @@ function renderDay(trip, phase, pi, day) {
   const c = colorOf(trip, phase, pi);
   const open = ui.open.has(day.dayNumber);
   const photo = safeUrl(day.photoUrl);
-  const head = h('button', { class: 'day-head', type: 'button', 'aria-expanded': open, onClick: () => toggleDay(day.dayNumber) },
-    h('span', { class: 'day-badge', text: 'D' + day.dayNumber }),
-    h('span', { class: 'day-title' }, h('strong', { text: day.title }), h('span', { text: [fmtDay(day.date), `${day.stops.length} stops`].filter(Boolean).join(' · ') })),
+  const head = h('button', { class: 'day-head', type: 'button', 'aria-expanded': String(open), onClick: () => toggleDay(day.dayNumber) },
+    h('span', { class: 'day-title' }, h('strong', { text: day.date ? new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(day.date + 'T12:00:00Z')) : day.title }), h('span', { text: `Day ${day.dayNumber} · ${day.stops.length} stops` })),
+    weatherChip(day),
     h('span', { class: 'chev', 'aria-hidden': 'true', text: '▾' })
   );
   const body = h('div', { class: 'day-body' });
   if (open) {
-    if (photo) body.append(h('img', { class: 'day-photo', src: photo, alt: day.title, loading: 'lazy', referrerpolicy: 'no-referrer', onError: (e) => e.target.remove() }), day.photoCredit ? h('p', { class: 'credit', text: 'Photo: ' + day.photoCredit }) : null);
+    body.append(h('p', { class: 'day-context', text: day.title }));
+    if (photo) body.append(h('img', { class: 'day-photo', src: photo, alt: day.title, loading: 'lazy', referrerpolicy: 'no-referrer', onError: (e) => e.target.remove() }), ...day.photoCredit ? [h('p', { class: 'credit', text: 'Photo: ' + day.photoCredit })] : []);
     if (day.date) body.append(wxLine(day));
     if (ui.focusDay === day.dayNumber) body.append(h('p', { class: 'route-line', id: 'routeLine', text: day.stops.length > 1 ? 'Finding travel times…' : '' }));
     day.stops.forEach((stop, i) => {
@@ -271,12 +295,9 @@ function renderDay(trip, phase, pi, day) {
       });
       body.append(box);
     }
-    body.append(h('div', { class: 'day-tools' },
-      h('button', { class: 'btn btn-small btn-primary', type: 'button', text: 'Add stop', onClick: () => openStopDialog(day.dayNumber, null) }),
-      h('button', { class: 'btn btn-small', type: 'button', text: 'Edit day', onClick: () => openDayDialog(day.dayNumber, phase.id) })
-    ));
+
   }
-  return h('section', { class: 'day', id: 'day-' + day.dayNumber, style: `--c:${c}`, dataset: { open } }, head, body);
+  return h('section', { class: 'day', id: 'day-' + day.dayNumber, style: `--c:${c}`, dataset: { open } }, h('div', { class: 'day-heading' }, head), ui.editMode && h('button', { class: 'btn day-edit', type: 'button', text: 'Edit day', onClick: () => openDayDialog(day.dayNumber, phase.id) }), body);
 }
 
 function renderList(trip) {
@@ -284,11 +305,10 @@ function renderList(trip) {
   list.replaceChildren();
   for (const { phase, pi } of visiblePhases(trip)) {
     const c = colorOf(trip, phase, pi);
-    list.append(h('div', { class: 'phase-head', style: `--c:${c}` }, h('h2', { text: phase.title }), phase.subtitle ? h('p', { text: phase.subtitle }) : null));
+    list.append(h('div', { class: 'phase-head', style: `--c:${c}` }, h('h2', {}, h('span', { class: 'phase-dot', 'aria-hidden': 'true' }), phase.title), phase.subtitle ? h('p', { text: phase.subtitle }) : null));
     for (const day of phase.days) list.append(renderDay(trip, phase, pi, day));
-    list.append(h('div', { class: 'phase-actions' }, h('button', { class: 'btn btn-small', type: 'button', text: 'Add day to this base', onClick: () => openDayDialog(null, phase.id) })));
+    if (ui.editMode) list.append(h('div', { class: 'phase-actions' }, h('button', { class: 'btn btn-small', type: 'button', text: 'Add day to this base', onClick: () => openDayDialog(null, phase.id) })));
   }
-  list.append(h('div', { class: 'phase-actions' }, h('button', { class: 'btn btn-small', type: 'button', text: 'Add a base', onClick: addPhase })));
   list.append($('footerTemplate').content.cloneNode(true));
 }
 
@@ -299,7 +319,7 @@ function mapData(trip) {
     const color = colorOf(trip, phase, pi);
     for (const day of phase.days) {
       day.stops.forEach((s, i) => items.push({ id: s.id, n: i + 1, name: s.name, lat: s.lat, lon: s.lon, color, visited: !!s.visited }));
-      if (day.stops.length > 1 && ui.focusDay !== day.dayNumber) lines.push({ color, coords: day.stops.map((s) => [s.lon, s.lat]) });
+      if (day.stops.length > 1 && ui.focusDay !== day.dayNumber) lines.push({ color: accentColor(), coords: day.stops.map((s) => [s.lon, s.lat]) });
     }
   }
   const tracks = visiblePhases(trip).flatMap(({ phase }) => phase.days.flatMap((d) => d.stops.filter((s) => s.track?.length > 1).map((s) => s.track)));
@@ -313,6 +333,7 @@ function render() {
   const focusRoot = focused?.closest('[id]');
   const focusIndex = focusRoot ? [...focusRoot.querySelectorAll('button,input,select,a')].indexOf(focused) : -1;
   const scroller = $('list').scrollTop;
+  ['shareExportBtn', 'addBaseBtn', 'manageBasesBtn', 'clearTicksBtn', 'editModeBtn'].forEach((id) => { $(id).disabled = false; });
   renderHero(trip);
   renderPhaseNav(trip);
   renderList(trip);
@@ -321,18 +342,24 @@ function render() {
   mapView?.setData(data);
   mapView?.setTracks(data.tracks);
   mapView?.select(ui.selectedId, { fly: false });
+  $('mapCaption').textContent = findStop(trip, ui.selectedId)?.stop.name || '';
   $('list').scrollTop = scroller;
   if (focused && !focused.isConnected && focusRoot) {
     const replacement = document.getElementById(focusRoot.id);
     (focusIndex < 0 ? replacement : replacement?.querySelectorAll('button,input,select,a')[focusIndex])?.focus({ preventScroll: true });
   }
-  refreshLiveWeather();
-  fetchWeatherForOpenDays();
+  $('editModeBtn').textContent = `Edit mode: ${ui.editMode ? 'on' : 'off'}`;
+  $('editModeBtn').setAttribute('aria-pressed', String(ui.editMode));
+  $('addStopBtn').disabled = !allDays(trip).length;
+  fetchDayServices();
   updateRoute();
   document.title = `${trip.title} · Trip Planner`;
 }
 
 function showEmpty() {
+  ['shareExportBtn', 'addBaseBtn', 'manageBasesBtn', 'clearTicksBtn', 'editModeBtn', 'addStopBtn'].forEach((id) => { $(id).disabled = true; });
+  $('undoBtn').hidden = true;
+  $('mapCaption').textContent = '';
   $('hero').replaceChildren(h('h1', { text: 'No trips yet' }), h('p', { class: 'summary', text: 'Create a trip, import one, or restore the Sardegna preset.' }),
     h('div', { class: 'row', style: 'margin-top:12px' },
       h('button', { class: 'btn btn-primary', type: 'button', text: 'New trip', onClick: () => $('newTripDlg').showModal() }),
@@ -410,7 +437,7 @@ function clearTicks() {
 
 function doUndo() {
   const label = store.undo();
-  if (label) { render(); toast(`Undone: ${label}`); }
+  if (label) { invalidateDayCaches(); render(); toast(`Undone: ${label}`); }
 }
 
 function moveStop(id, delta) {
@@ -488,20 +515,70 @@ function addPhase() {
   const name = window.prompt('Name of the new base (for example, Cagliari):');
   if (!name || !name.trim()) return;
   store.mutate('Add base', (trip) => {
-    trip.phases.push({ id: 'p' + Date.now().toString(36), title: name.trim().slice(0, 120), colorKey: trip.phases.length + 1, days: [] });
+    trip.phases.push({ id: 'p' + Date.now().toString(36), title: name.trim().slice(0, 120), colorKey: trip.phases.length % PALETTE.length + 1, days: [] });
   });
   render();
 }
 
 /* ---------- weather and routes ---------- */
 
-async function fetchWeatherForOpenDays() {
+function invalidateDayCaches() {
+  providerVersion++;
+  wxCache.clear(); legCache.clear();
+  routeCtl?.abort(); routeVer++;
+}
+
+function packingEntries(tripId) {
+  return Object.keys(localStorage).filter((key) => key.startsWith(`tp-pack:${tripId}|`)).map((key) => [key, localStorage.getItem(key)]);
+}
+
+function restorePacking(tripId, entries) {
+  packingEntries(tripId).forEach(([key]) => localStorage.removeItem(key));
+  entries.forEach(([key, value]) => localStorage.setItem(key, value));
+}
+
+function renderBases() {
   const trip = store.active();
+  $('basesList').replaceChildren(...trip.phases.map((phase, index) => h('div', { class: 'base-row', dataset: { baseId: phase.id } },
+    h('strong', { text: phase.title }), h('div', { class: 'row' },
+      h('button', { class: 'btn', type: 'button', text: 'Up', disabled: index === 0, onClick: () => reorderBase(phase.id, -1) }),
+      h('button', { class: 'btn', type: 'button', text: 'Down', disabled: index === trip.phases.length - 1, onClick: () => reorderBase(phase.id, 1) })
+    ))));
+}
+
+function reorderBase(phaseId, delta) {
+  const trip = store.active();
+  const result = reorderBases(trip, phaseId, delta);
+  if (!result) return;
+  const state = { open: new Set(ui.open), focusDay: ui.focusDay, selectedId: ui.selectedId, phase: ui.phase };
+  const packing = packingEntries(trip.id);
+  store.mutate('Reorder bases', (active) => {
+    active.phases = result.trip.phases;
+    Object.assign(ui, remapDayState(state, result.dayMap));
+    restorePacking(trip.id, remapPacking(packing, trip.id, result.dayMap));
+  }, { onUndo: () => { Object.assign(ui, state); restorePacking(trip.id, packing); } });
+  invalidateDayCaches();
+  render(); renderBases();
+}
+
+function refreshWeatherDay(tripId, number, key) {
+  const trip = store.active();
+  const day = trip?.id === tripId ? findDay(trip, number)?.day : null;
+  const value = wxCache.get(key);
+  if (!day || !value || weatherKey(trip, day) !== key || !weatherEligible(day)) return;
+  const chip = document.querySelector(`[data-weather-chip="${number}"]`);
+  if (chip) fillWeatherChip(chip, value);
+  const detail = document.querySelector(`[data-wx="${number}"]`);
+  if (detail) fillWx(detail, value);
+}
+
+function fetchDayServices() {
+  const trip = store.active();
+  if (!trip) return;
   const version = providerVersion;
-  for (const day of allDays(trip).map((x) => x.day)) {
-    if (!ui.open.has(day.dayNumber) || !day.stops.length) continue;
-    // Snapshot request identity so edits cannot relabel a pending location's elevation.
-    const missing = day.stops.filter((s) => !elevationCache.has(elevationKey(s))).map((s) => ({ key: elevationKey(s), point: [s.lon, s.lat] }));
+  for (const { day } of allDays(trip)) {
+    if (!ui.open.has(day.dayNumber)) continue;
+    const missing = day.stops.filter((stop) => !elevationCache.has(elevationKey(stop))).map((stop) => ({ key: elevationKey(stop), point: [stop.lon, stop.lat] }));
     if (missing.length) {
       missing.forEach(({ key }) => elevationCache.set(key, null));
       geo.elevations(missing.map(({ point }) => point)).then((values) => {
@@ -510,40 +587,38 @@ async function fetchWeatherForOpenDays() {
           if (!Number.isFinite(values[i])) return;
           elevationCache.set(key, values[i]);
           document.querySelectorAll('[data-elevation]').forEach((el) => {
-            if (el.dataset.elevation !== key) return;
-            el.textContent = `Elevation ${Math.round(values[i])} m`;
-            el.hidden = false;
+            if (el.dataset.elevation === key) { el.textContent = `Elevation ${Math.round(values[i])} m`; el.hidden = false; }
           });
         });
       }).catch(() => {});
     }
-    if (!day.date) continue;
-    const key = weatherKey(trip, day);
-    const refresh = () => {
-      const current = store.active();
-      const liveDay = current && findDay(current, day.dayNumber)?.day;
-      if (!liveDay || weatherKey(current, liveDay) !== key || !wxCache.get(key)) return;
-      const el = document.querySelector(`[data-wx="${day.dayNumber}"]`);
-      if (el) fillWx(el, wxCache.get(key), liveDay);
-    };
-    const boat = day.stops.find((s) => s.type === 'boat');
-    if (boat && geo.inForecastWindow(day.date) && !waveCache.has(key)) {
-      waveCache.set(key, null);
-      geo.waves(boat.lat, boat.lon, day.date).then((value) => {
-        if (version !== providerVersion) return;
-        waveCache.set(key, value);
-        refresh();
-      }).catch(() => {});
-    }
-    if (wxCache.has(key)) continue;
-    wxCache.set(key, null);
-    const s = day.stops[0];
-    geo.weather(s.lat, s.lon, day.date).then((w) => {
-      if (version !== providerVersion) return;
-      wxCache.set(key, w);
-      refresh();
-    }).catch(() => {});
   }
+  runWeatherQueue();
+}
+
+async function runWeatherQueue() {
+  if (weatherRunning) return;
+  weatherRunning = true;
+  try {
+    // Choose again after every response so edits and trip switches discard obsolete work.
+    for (;;) {
+      const trip = store.active();
+      if (!trip) break;
+      const day = allDays(trip).map(({ day }) => day).find((day) => weatherEligible(day) && !wxCache.has(weatherKey(trip, day)));
+      if (!day) break;
+      const key = weatherKey(trip, day), number = day.dayNumber, version = providerVersion;
+      wxCache.set(key, null);
+      const stop = day.stops.find((stop) => Number.isFinite(stop.lat) && Number.isFinite(stop.lon));
+      try {
+        const value = await geo.weather(stop.lat, stop.lon, day.date);
+        if (version !== providerVersion) continue;
+        if (value && Number.isFinite(value.tMax) && Number.isFinite(value.tMin)) {
+          wxCache.set(key, value);
+          refreshWeatherDay(trip.id, number, key);
+        }
+      } catch { /* Hide failed weather; saving and the itinerary keep working. */ }
+    }
+  } finally { weatherRunning = false; }
 }
 
 const MODE_WORD = { driving: 'by car', walking: 'on foot', cycling: 'by bike' };
@@ -555,8 +630,8 @@ async function updateRoute() {
   const trip = store.active();
   const found = ui.focusDay != null ? findDay(trip, ui.focusDay) : null;
   if (!found || found.day.stops.length < 2) { mapView?.setRoutes([]); return; }
-  const { day, phase, pi } = found;
-  const color = colorOf(trip, phase, pi);
+  const { day } = found;
+  const color = accentColor();
   const mode = day.mode || 'driving';
   const stops = day.stops;
   // Boat legs are never routed over roads.
@@ -613,6 +688,7 @@ function openStopDialog(dayNumber, stopId) {
   $('sfImage').value = s?.imageUrl || '';
   $('sfCredit').value = s?.imageCredit || '';
   photoVersion++;
+  $('stopAdvanced').open = false;
   $('sfPhotos').replaceChildren();
   $('sfFindPhoto').disabled = false;
   $('sfPhotoStatus').textContent = 'Photos from Wikipedia and Wikimedia Commons. Check that the photo shows this stop.';
@@ -655,7 +731,7 @@ async function findPhotos() {
     const rows = await geo.findStopPhoto($('sfName').value.trim(), $('sfLat').value === '' ? NaN : Number($('sfLat').value), $('sfLon').value === '' ? NaN : Number($('sfLon').value));
     if (version !== photoVersion || !$('stopDlg').open || snapshot !== identity()) return;
     $('sfPhotos').replaceChildren(...rows.map((row, index) => h('div', { class: 'photo-choice' },
-      h('button', { type: 'button', 'aria-label': `Use photo ${index + 1}`, 'aria-pressed': false, onClick: (event) => {
+      h('button', { type: 'button', 'aria-label': `Use photo ${index + 1}`, 'aria-pressed': 'false', onClick: (event) => {
         if (snapshot !== identity()) { $('sfPhotoStatus').textContent = 'The stop changed. Find photos again.'; return; }
         $('sfImage').value = row.imageUrl;
         $('sfCredit').value = row.imageCredit;
@@ -678,7 +754,7 @@ function submitStop(e) {
   if (e.submitter?.value === 'cancel') { $('stopDlg').close(); return; }
   const err = $('sfError');
   const lat = Number($('sfLat').value), lon = Number($('sfLon').value);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 85 || Math.abs(lon) > 180) { err.textContent = 'Enter valid coordinates, or search for the place.'; err.hidden = false; return; }
+  if (!$('sfLat').value || !$('sfLon').value || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 85 || Math.abs(lon) > 180) { err.textContent = 'Enter valid coordinates, or search for the place.'; err.hidden = false; return; }
   const link = $('sfLink').value.trim();
   if (link && !safeUrl(link)) { err.textContent = 'The link must start with https://'; err.hidden = false; return; }
   const image = $('sfImage').value.trim();
@@ -690,6 +766,7 @@ function submitStop(e) {
     imageUrl: image || undefined, imageCredit: $('sfCredit').value.trim() || undefined
   };
   const { dayNumber, stopId } = ui.stopEdit;
+  let addedId = null;
   store.mutate(stopId ? 'Edit stop' : 'Add stop', (trip) => {
     const f = findDay(trip, dayNumber);
     if (stopId) {
@@ -701,6 +778,7 @@ function submitStop(e) {
       const stop = { id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), links: link ? [{ kind: 'web', label: $('sfLinkLabel').value.trim() || 'Link', url: link }] : [], visited: false, ...next };
       f.day.stops.push(stop);
       ui.selectedId = stop.id;
+      addedId = stop.id;
     }
   });
   legCache.delete(store.active().id + '|' + dayNumber);
@@ -708,6 +786,20 @@ function submitStop(e) {
   ui.focusDay = dayNumber;
   $('stopDlg').close();
   render();
+  if (addedId && !image) autoPhoto(store.active().id, addedId, next);
+}
+
+async function autoPhoto(tripId, id, snapshot) {
+  try {
+    const rows = await geo.findStopPhoto(snapshot.name, snapshot.lat, snapshot.lon);
+    const photo = rows[0];
+    if (!acceptsAutoPhoto(snapshot.name, photo)) return;
+    const trip = store.getTrip(tripId);
+    const stop = trip ? findStop(trip, id)?.stop : null;
+    if (!canApplyAutoPhoto(stop, snapshot)) return;
+    store.patch(() => { stop.imageUrl = photo.imageUrl; stop.imageCredit = photo.imageCredit; }, tripId);
+    if (store.active()?.id === tripId) render();
+  } catch { /* Photo discovery must never interrupt editing. */ }
 }
 
 /* ---------- day dialog ---------- */
@@ -901,33 +993,7 @@ async function loadFromUrlParams() {
   else toast('Opened the shared trip. It is saved in this browser.');
 }
 
-/* ---------- local agent connector (optional) ---------- */
 
-async function connectMcp() {
-  const base = $('mcpUrl').value.trim().replace(/\/$/, '');
-  const status = $('mcpStatus');
-  const u = safeUrl(base);
-  if (!u || !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(base)) { status.textContent = 'Use a local address such as http://127.0.0.1:4789'; return; }
-  status.textContent = 'Connecting…';
-  try {
-    const health = await (await fetch(base + '/health')).json();
-    if (!health.ok) throw new Error('not ok');
-  } catch { status.textContent = 'Nothing answered. Start the connector first (see mcp/README.md).'; return; }
-  mcp?.close();
-  mcp = new EventSource(base + '/events');
-  const sync = async (id) => {
-    try {
-      const obj = await (await fetch(`${base}/trips/${encodeURIComponent(id)}`)).json();
-      const r = store.upsert(obj);
-      if (r.ok) { render(); toast(`Updated from your agent: ${obj.title}`); }
-      else notice('Your agent saved a trip that does not match the format: ' + r.errors.slice(0, 3).map((x) => `${x.path} ${x.message}`).join('; '));
-    } catch { /* trip may have been deleted */ }
-  };
-  mcp.onmessage = (ev) => { try { sync(JSON.parse(ev.data).id); } catch { /* ignore */ } };
-  mcp.onerror = () => { status.textContent = 'Connection lost. It retries by itself.'; };
-  mcp.onopen = () => { status.textContent = 'Connected. Changes your agent makes appear here.'; };
-  try { for (const t of await (await fetch(base + '/trips')).json()) await sync(t.id); } catch { /* ignore */ }
-}
 
 /* ---------- boot ---------- */
 
@@ -951,11 +1017,8 @@ function fillProviderFields(value) {
 
 function applyProviderSettings(value) {
   geo.configureProviders(value);
-  liveData.clear();
-  livePending.clear();
   providerVersion++;
   wxCache.clear();
-  waveCache.clear();
   elevationCache.clear();
   legCache.clear();
   render();
@@ -969,9 +1032,8 @@ function setupProviders() {
   $('providerFields').replaceChildren(...providerFields.map(([key, label]) => h('label', { text: label }, h('input', { id: 'provider-' + key, type: 'url', required: true }))));
   $('settingsBtn').onclick = () => {
     fillProviderFields(geo.providers);
-    $('mapsLinks').value = mapsChoice();
     $('providerError').hidden = true;
-    $('menuDlg').close();
+    $('tripMenuDlg').close();
     $('settingsDlg').showModal();
   };
   $('providerForm').onsubmit = (event) => {
@@ -984,7 +1046,6 @@ function setupProviders() {
         else value[key] = $('provider-' + key).value;
       }
       const next = normalizeProviders(value);
-      localStorage.setItem('tp-maps-links', $('mapsLinks').value);
       localStorage.setItem('tp-providers', JSON.stringify(next));
       applyProviderSettings(next);
       $('settingsDlg').close();
@@ -997,8 +1058,6 @@ function setupProviders() {
   $('resetProviders').onclick = () => {
     try {
       localStorage.removeItem('tp-providers');
-      localStorage.removeItem('tp-maps-links');
-      $('mapsLinks').value = 'both';
       applyProviderSettings(defaults);
       fillProviderFields(defaults);
       $('providerError').hidden = true;
@@ -1042,20 +1101,35 @@ function toggleGps() {
 function wire() {
   setupProviders();
   $('gps').onclick = toggleGps;
-  $('mapSize').onclick = () => setMapCollapsed(!document.querySelector('.map-panel').classList.contains('map-collapsed'));
-  try { if (localStorage.getItem('tp-map-collapsed') === '1' && innerWidth < 900) setMapCollapsed(true); } catch { /* storage is optional */ }
+  $('mapSize').onclick = () => setMapExpanded(!document.querySelector('.map-panel').classList.contains('map-expanded'));
+  setMapExpanded(localStorage.getItem('tp-map-expanded') === '1');
+  $('zoomIn').onclick = () => mapView?.map?.zoomIn();
+  $('zoomOut').onclick = () => mapView?.map?.zoomOut();
+  $('compass').onclick = () => mapView?.map?.resetNorth();
+  $('resetMap').onclick = () => { mapView?.reset(ui.focusDay == null ? undefined : findDay(store.active(), ui.focusDay)?.day.stops.map((s) => s.id)); $('tilt').setAttribute('aria-pressed', 'false'); };
+  $('addStopBtn').onclick = () => {
+    const days = allDays(store.active()).map(({ day }) => day);
+    const day = days.find((d) => d.dayNumber === ui.focusDay) || days.find((d) => ui.open.has(d.dayNumber)) || days[0];
+    if (day) openStopDialog(day.dayNumber, null);
+  };
+  $('editModeBtn').onclick = () => { ui.editMode = !ui.editMode; localStorage.setItem('tp-edit-mode', ui.editMode ? '1' : '0'); $('tripMenuDlg').close(); render(); };
+  $('addBaseBtn').onclick = () => { $('tripMenuDlg').close(); addPhase(); };
+  $('manageBasesBtn').onclick = () => { $('tripMenuDlg').close(); renderBases(); $('basesDlg').showModal(); };
+  $('clearTicksBtn').onclick = () => { $('tripMenuDlg').close(); clearTicks(); };
+  $('shareExportBtn').onclick = () => { $('tripMenuDlg').close(); $('shareInfo').textContent = ''; $('menuDlg').showModal(); };
   $('toolsBtn').onclick = () => {
     const open = $('mapTools').hidden;
     $('mapTools').hidden = !open;
     $('toolsBtn').setAttribute('aria-expanded', String(open));
   };
-  scheduleLiveRefresh();
+  document.addEventListener('click', (event) => { if (event.target.closest('[data-about]')) $('aboutDlg').showModal(); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') document.querySelectorAll('details.menu[open]').forEach((d) => { d.open = false; }); });
   document.addEventListener('click', (event) => document.querySelectorAll('details.menu[open]').forEach((d) => { if (!d.contains(event.target)) d.open = false; }));
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshLiveWeather(); if (document.hidden && gpsToken) stopGps('Location tracking stopped while the page was hidden.'); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) fetchDayServices(); if (document.hidden && gpsToken) stopGps('Location tracking stopped while the page was hidden.'); });
   window.addEventListener('pagehide', () => { if (gpsToken) stopGps(); });
-  $('libraryBtn').onclick = () => { $('importError').hidden = true; renderLibrary(); $('libraryDlg').showModal(); };
-  $('undoBtn').onclick = doUndo;
-  $('menuBtn').onclick = () => { $('shareInfo').textContent = ''; $('menuDlg').showModal(); };
+  $('libraryBtn').onclick = () => { $('tripMenuDlg').close(); $('importError').hidden = true; renderLibrary(); $('libraryDlg').showModal(); };
+  $('undoBtn').onclick = () => { $('tripMenuDlg').close(); doUndo(); };
+  $('menuBtn').onclick = () => $('tripMenuDlg').showModal();
   $('newTripBtn').onclick = () => { $('libraryDlg').close(); $('newTripDlg').showModal(); };
   $('importBtn').onclick = async () => { const f = await pickFile('.json,.gpx,application/json,application/gpx+xml'); if (f) importFile(f); };
   $('presetBtn').onclick = async () => { await store.resetPreset(); ui.open.clear(); $('libraryDlg').close(); render(); mapView?.fit(); };
@@ -1081,6 +1155,7 @@ function wire() {
     ui.picking = true;
     document.body.classList.add('picking');
     $('stopDlg').close();
+    setMapExpanded(true);
     toast('Tap the map where the stop is.');
   };
   $('exportJson').onclick = () => download(`${store.active().id}.json`, store.exportJson(), 'application/json');
@@ -1094,7 +1169,6 @@ function wire() {
       $('shareInfo').textContent = link.length > 8000 ? `Link copied, but it is long (${link.length} characters). Some apps cut long links. Download the JSON instead for big trips.` : 'Link copied. Anyone with it can open this trip. Nothing was uploaded.';
     } catch { $('shareInfo').textContent = 'Could not build a link in this browser. Download the JSON instead.'; }
   };
-  $('mcpConnect').onclick = connectMcp;
   const sel = $('sfType');
   Object.entries(TYPE_LABEL).forEach(([v, l]) => sel.append(h('option', { value: v, text: l })));
   document.querySelectorAll('[data-layer]').forEach((b) => b.addEventListener('click', () => {
@@ -1121,7 +1195,7 @@ async function boot() {
     onReady: () => { const d = mapData(store.active() || { phases: [] }); mapView.setData(d); mapView.setTracks(d.tracks); mapView.fit(false); },
     onSelectStop: (id) => selectStop(id),
     onMapClick: (ll) => {
-      if (!ui.picking) return;
+      if (!ui.picking) { if (innerWidth < 960) setMapExpanded(!document.querySelector('.map-panel').classList.contains('map-expanded')); return; }
       ui.picking = false;
       document.body.classList.remove('picking');
       $('sfLat').value = ll.lat.toFixed(5);
@@ -1133,89 +1207,5 @@ async function boot() {
   render();
 }
 
-
-function mapsChoice() {
-  const choice = localStorage.getItem('tp-maps-links');
-  return ['osm', 'google'].includes(choice) ? choice : 'both';
-}
-
-const liveData = new Map(), livePending = new Map();
-let liveTimer;
-function scheduleLiveRefresh() {
-  clearTimeout(liveTimer);
-  if (!document.hidden) liveTimer = setTimeout(async () => {
-    await refreshLiveWeather();
-    scheduleLiveRefresh();
-  }, LIVE_TTL);
-}
-function liveIdentity(trip) {
-  const state = tripDayState(trip);
-  const stop = state.day?.stops[0] || allStops(trip)[0];
-  return { ...state, stop, key: JSON.stringify([providerVersion, trip.id, state.day?.dayNumber, state.day?.date, stop?.lat, stop?.lon]) };
-}
-
-function liveLines(trip) {
-  const state = liveIdentity(trip), value = liveData.get(state.key);
-  const w = value?.current, f = value?.forecast;
-  const n = (number, suffix) => Number.isFinite(number) ? Math.round(number) + suffix : 'unavailable';
-  const current = w ? `Now ${n(w.temperature, ' °C')}, ${w.description.toLowerCase()}, wind ${n(w.wind, ' km/h')}, rain ${n(w.rainChance, '%')}` : 'Current weather unavailable';
-  const forecast = f ? `Day ${state.day.dayNumber}: ${n(f.tMin, ' °C')} to ${n(f.tMax, ' °C')}, rain ${n(f.rainChance, '%')}. ${f.kind === 'forecast' ? 'Forecast' : 'Typical for these dates, not a forecast'}` : 'Trip weather unavailable';
-  const time = value?.updatedAt ? new Date(value.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
-  return { state, first: state.label ? `${state.label} · ${current}` : current, second: `${forecast}${time ? ' · Updated ' + time : ''}${value?.stale ? ' · Saved data, offline' : ''}` };
-}
-
-function openLiveDay() {
-  const state = tripDayState(store.active());
-  if (!state.day) return;
-  ui.phase = 'all'; ui.open.add(state.day.dayNumber); ui.focusDay = state.day.dayNumber;
-  render(); fitDay(state.day.dayNumber); scrollListTo($('day-' + state.day.dayNumber));
-}
-
-function liveStrip(trip) {
-  const lines = liveLines(trip);
-  return h('div', { class: 'live-strip', id: 'liveStrip' },
-    h('button', { type: 'button', class: 'live-summary', title: lines.first + '. ' + lines.second, onClick: openLiveDay },
-      h('span', { text: lines.first }), h('span', { text: lines.second })),
-    h('button', { type: 'button', class: 'live-more', 'aria-label': 'Weather details', text: 'More', onClick: () => {
-      const latest = liveLines(store.active());
-      $('liveDetails').replaceChildren(h('p', { text: latest.first }), h('p', { text: latest.second }),
-        h('p', { class: 'hint', text: 'Weather is for the first stop of the relevant day, or the first trip stop. Rain chance uses the current local hour. Typical weather uses past dates and is not a forecast.' }),
-        h('button', { type: 'button', class: 'btn', text: 'Open day', onClick: () => { $('liveDlg').close(); openLiveDay(); } }));
-      $('liveDlg').showModal();
-    } })
-  );
-}
-
-async function refreshLiveWeather() {
-  const trip = store.active();
-  if (!trip || document.hidden) return;
-  const state = liveIdentity(trip);
-  if (!state.stop || livePending.has(state.key)) return;
-  const saved = liveData.get(state.key);
-  if (saved && Date.now() - saved.checkedAt < LIVE_TTL) return;
-  const token = {};
-  livePending.set(state.key, token);
-  const results = await Promise.allSettled([
-    geo.currentWeather(state.stop.lat, state.stop.lon),
-    state.day?.date ? geo.weather(state.stop.lat, state.stop.lon, state.day.date) : Promise.resolve(null)
-  ]);
-  if (livePending.get(state.key) !== token) return;
-  livePending.delete(state.key);
-  const current = results[0].status === 'fulfilled' ? results[0].value : null;
-  const forecast = results[1].status === 'fulfilled' ? results[1].value : null;
-  liveData.set(state.key, { current: current || saved?.current, forecast: forecast || saved?.forecast,
-    checkedAt: Date.now(), updatedAt: current?.fetchedAt || forecast?.fetchedAt || saved?.updatedAt,
-    stale: (!current || !forecast) && !!saved?.updatedAt });
-  if (store.active() && liveIdentity(store.active()).key === state.key) {
-    const lines = liveLines(store.active());
-    const button = $('liveStrip')?.querySelector('.live-summary');
-    if (button) {
-      button.title = lines.first + '. ' + lines.second;
-      button.children[0].textContent = lines.first;
-      button.children[1].textContent = lines.second;
-    }
-  }
-  scheduleLiveRefresh();
-}
 
 boot();

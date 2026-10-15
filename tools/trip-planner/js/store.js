@@ -77,6 +77,7 @@ export async function resetPreset() {
 
 export const presetPresent = () => !!data.trips[PRESET_ID];
 export const active = () => data.trips[data.activeId];
+export const getTrip = (id) => data.trips[id];
 export const activeMeta = () => data.meta[data.activeId] || {};
 
 export function setActive(id) {
@@ -102,9 +103,9 @@ function touch(id) {
 }
 
 // Structural edits keep a snapshot so one step can be undone.
-export function mutate(label, fn) {
+export function mutate(label, fn, { onUndo } = {}) {
   const trip = active();
-  undoStack.push({ id: data.activeId, label, snapshot: structuredClone(trip) });
+  undoStack.push({ id: data.activeId, label, onUndo, snapshot: structuredClone(trip) });
   if (undoStack.length > 30) undoStack.shift();
   fn(trip);
   touch(data.activeId);
@@ -112,9 +113,10 @@ export function mutate(label, fn) {
 }
 
 // Small state changes, like ticking a box, are not worth an undo step.
-export function patch(fn) {
-  fn(active());
-  touch(data.activeId);
+export function patch(fn, id = data.activeId) {
+  if (!data.trips[id]) return;
+  fn(data.trips[id]);
+  touch(id);
   persist();
 }
 
@@ -126,6 +128,7 @@ export function undo() {
   if (!canUndo()) return null;
   const step = undoStack.pop();
   data.trips[step.id] = step.snapshot;
+  step.onUndo?.();
   touch(step.id);
   persist();
   return step.label;

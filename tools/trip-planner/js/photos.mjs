@@ -1,3 +1,20 @@
+const nameTokens = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  .split(/[^a-z0-9]+/).filter((token) => token.length > 2 && !['the', 'and', 'beach', 'spiaggia', 'viewpoint', 'file', 'jpg', 'jpeg', 'png', 'webp'].includes(token));
+
+export function photoNameScore(name, title) {
+  const tokens = [...new Set(nameTokens(name))], found = new Set(nameTokens(title));
+  if (!tokens.length || !tokens.some((token) => token.length >= 4 && found.has(token))) return 0;
+  return tokens.filter((token) => found.has(token)).length / tokens.length;
+}
+
+export function acceptsAutoPhoto(name, candidate) {
+  return !!candidate?.imageUrl && !!candidate.imageCredit && candidate.nameScore >= 0.8 && photoNameScore(name, candidate.matchTitle) >= 0.8;
+}
+
+export function canApplyAutoPhoto(stop, snapshot) {
+  return !!stop && !stop.imageUrl && stop.name === snapshot.name && stop.lat === snapshot.lat && stop.lon === snapshot.lon;
+}
+
 const plain = (value) => String(value || '').replace(/<[^>]*>/g, '').replace(/&(?:amp|quot|lt|gt|#39);/g,
   (entity) => ({ '&amp;': '&', '&quot;': '"', '&lt;': '<', '&gt;': '>', '&#39;': "'" })[entity]).replace(/[\u2013\u2014]/g, ',').trim();
 const https = (value) => {
@@ -26,8 +43,7 @@ export function createPhotoFinder(request, { now = Date.now } = {}) {
         query(wikipedia, { generator: 'geosearch', ggscoord: `${lat}|${lon}`, ggsradius: '10000', ggslimit: '10', prop: 'pageimages', piprop: 'name', pilicense: 'free' }),
         query(commons, { generator: 'geosearch', ggscoord: `${lat}|${lon}`, ggsradius: '1000', ggslimit: '8', ggsnamespace: '6', prop: 'imageinfo', iiprop: 'url|extmetadata|mime', iiurlwidth: '640' })
       ]);
-      const tokens = name.toLowerCase().split(/\W+/).filter((token) => token.length > 2);
-      const relevance = (page) => tokens.reduce((score, token) => score + Number(page.title?.toLowerCase().includes(token)), 0);
+      const relevance = (page) => Math.max(photoNameScore(name, page.title), photoNameScore(name, page.matchTitle));
       const wikiPages = results[0].status === 'fulfilled' ? pages(results[0].value).sort((a, b) => relevance(b) - relevance(a)) : [];
       const titles = [...new Set(wikiPages.map((page) => page.pageimage).filter(Boolean))].slice(0, 8);
       let wikiFiles = [];
@@ -35,6 +51,7 @@ export function createPhotoFinder(request, { now = Date.now } = {}) {
         try { wikiFiles = pages(await query(commons, { titles: titles.map((title) => 'File:' + title).join('|'), prop: 'imageinfo', iiprop: 'url|extmetadata|mime', iiurlwidth: '640' })); }
         catch { /* Nearby Commons files can still be used if page images fail. */ }
       }
+      wikiFiles = wikiFiles.map((page) => ({ ...page, matchTitle: wikiPages.find((wiki) => 'File:' + wiki.pageimage === page.title)?.title || page.title }));
       const nearby = results[1].status === 'fulfilled' ? pages(results[1].value).sort((a, b) => relevance(b) - relevance(a)) : [];
       if (results.every((result) => result.status === 'rejected')) throw new Error('Photo search is unavailable. Paste an image URL instead.');
       const candidates = [], seen = new Set();
@@ -46,7 +63,8 @@ export function createPhotoFinder(request, { now = Date.now } = {}) {
         if (!imageUrl || !sourceUrl || !author || !license || seen.has(imageUrl)) continue;
         // Preserve the complete license even for files with a very long author field.
         const imageCredit = `${author.slice(0, Math.max(1, 198 - license.length))}, ${license}`;
-        candidates.push({ imageUrl, imageCredit, sourceUrl });
+        const matchTitle = photoNameScore(name, page.matchTitle) > photoNameScore(name, page.title) ? page.matchTitle : page.title;
+        candidates.push({ imageUrl, imageCredit, sourceUrl, matchTitle, nameScore: relevance(page) });
         seen.add(imageUrl);
         if (candidates.length === 4) break;
       }

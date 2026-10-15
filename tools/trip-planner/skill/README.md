@@ -1,6 +1,6 @@
 # Trip Planner skill
 
-A set of instructions that lets any AI agent plan a trip and hand it back in the one JSON format the Trip Planner app opens. It works with Claude, Codex, Gemini, ChatGPT, local open-source models and anything else that can read text. No agent, vendor, account, API key or installation is required.
+A set of instructions that lets any AI agent plan a trip and hand it back in the one JSON format the Trip Planner app opens. It works with Claude, Codex, Gemini, ChatGPT, local open-source models and anything else that can read text. No vendor, account or API key is required.
 
 ## What is in this folder
 
@@ -18,7 +18,7 @@ The `reference/` files are help for the agent while it works. The `examples/` fi
 
 1. **A chat with no files** (any chatbot or local model): paste all of `SKILL.md`, then describe your trip. Paste the `reference/` files as well if the model has room.
 2. **An agent that supports skills or instruction files** (Claude, Codex, and others): copy this whole folder into that tool's documented skills or instructions location, keeping `SKILL.md`, `reference/` and `examples/` together. For example `.claude/skills/trip-planner/` for Claude, or reference `SKILL.md` from `AGENTS.md` for tools that read it.
-3. **An agent with tool access** (optional): connect the local MCP connector in `../mcp/` for place search, routing, weather, validation and saving. The skill works without it.
+3. **As a plugin** (Claude Code, Codex): packaging is planned and not published yet.
 
 The agent returns one `.json` file. Import it in the app, or host it at a public HTTPS address and open `<app-url>?plan=<percent-encoded-https-json-url>`.
 

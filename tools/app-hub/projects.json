@@ -16,6 +16,7 @@
         "css/tokens.css",
         "css/app.css",
         "js/app.js",
+        "js/bases.mjs",
         "js/geo.js",
         "js/gpx.js",
         "js/live.mjs",

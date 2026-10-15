@@ -16,7 +16,7 @@ const candidateRoot = resolve(process.cwd(), candidateArg);
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
 const uiAssets = await sharedUiAssets(repositoryRoot, projectDir);
 const expectedFiles = [...validatePublicCatalog(catalog, repositoryRoot, projectDir), ...uiAssets.map(asset => asset.path)].sort();
-assert.equal(expectedFiles.length, 29, 'Public content allowlist must remain exactly 29 files.');
+assert.equal(expectedFiles.length, 30, 'Public content allowlist must remain exactly 30 files.');
 const privateBoundary = /private[.-]projects\.|private[- ]apps|PRIVATE_PROJECTS:|No private apps yet|private-apps\.json|private-hub\.html|private-app-hub\.css|catalog\.json/i;
 for (const name of ['index.html', 'tara.html', ...uiAssets.map(asset => `assets/${asset.name}`)]) {
   assert.doesNotMatch((await readSafe(repositoryRoot, resolve(projectDir, name))).toString('utf8'), privateBoundary, `Private address or navigation in public source: ${name}`);
@@ -184,7 +184,7 @@ try {
     const height = width === 1280 ? 900 : 812;
     await tripPage.setViewportSize({ width, height });
     await tripPage.goto('https://public.audit.invalid/trip-planner/');
-    for (const [modalId, open, field] of [['libraryDlg', ['libraryBtn'], 'newTripBtn'], ['newTripDlg', ['libraryBtn', 'newTripBtn'], 'ntTitle']]) {
+    for (const [modalId, open, field] of [['libraryDlg', ['menuBtn', 'libraryBtn'], 'newTripBtn'], ['newTripDlg', ['menuBtn', 'libraryBtn', 'newTripBtn'], 'ntTitle']]) {
       const modal = tripPage.locator(`#${modalId}`);
       for (const trigger of open) await tripPage.locator(`#${trigger}`).click();
       await modal.waitFor({ state: 'visible' });
