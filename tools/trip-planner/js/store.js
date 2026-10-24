@@ -5,6 +5,10 @@ import { slug, progress } from './util.js';
 const KEY = 'trip-planner:v4';
 export const PRESET_ID = 'sardegna-summer';
 const MAX_IMPORT_BYTES = 2_000_000;
+const SAMPLE_PATHS = Object.freeze({
+  sardegna: '../samples/sardegna.json',
+  portugal: '../samples/portugal-6-day-demo.json'
+});
 
 let data = { order: [], trips: {}, meta: {}, activeId: null };
 let schema = null;
@@ -59,8 +63,7 @@ async function fetchPreset() {
 export async function init() {
   await loadSchema();
   load();
-  if (!data.order.length) await resetPreset();
-  if (!data.activeId || !data.trips[data.activeId]) data.activeId = data.order[0];
+  if (!data.activeId || !data.trips[data.activeId]) data.activeId = data.order.find((id) => data.trips[id]) || null;
   persist();
 }
 
@@ -73,6 +76,14 @@ export async function resetPreset() {
   undoStack = [];
   persist();
   return trip;
+}
+
+export async function importSample(name) {
+  const path = SAMPLE_PATHS[name];
+  if (!path) throw new Error('Choose one of the available sample trips.');
+  const response = await fetch(here(path));
+  if (!response.ok) throw new Error('The sample trip could not be loaded.');
+  return importTrip(publicPresetNote(await response.json()), { preset: name === 'sardegna' });
 }
 
 export const presetPresent = () => !!data.trips[PRESET_ID];

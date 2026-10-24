@@ -26,7 +26,7 @@
 
   <main id="app" class="app">
     <section class="overview" aria-label="Trip overview">
-      <div class="overline">Trip overview</div>
+      <div class="overline" id="overline">Trip overview</div>
       <div class="overview-main">
         <div class="title-block"><div class="hero" id="hero" aria-live="polite"></div></div>
         <div class="trip-mark" id="tripMark" aria-label="Trip dates and bases"></div>
@@ -34,7 +34,7 @@
       <section class="progress-row" id="tripProgress" aria-label="Trip progress"></section>
       <nav class="phase-nav" id="phaseNav" aria-label="Filter itinerary by base"></nav>
     </section>
-    <div class="layout">
+    <div class="layout" id="tripWorkspace">
       <aside class="map-panel" aria-label="Map">
         <div class="map-frame" id="mapFrame">
           <div id="map" role="application" aria-label="Trip map"></div>

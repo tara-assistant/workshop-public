@@ -1,6 +1,6 @@
 # My Trip Planner
 
-Plan a trip on an open map. No account, API key, build step or server-side agent connector is needed. Keep trips in this browser, check off stops, share them with friends, or ask your own agent to draft a trip file.
+Plan a trip on an open map. Fresh browser profiles start with no trip loaded; you can explore the Sardegna or Portugal sample, create a trip yourself, or import a file. No account, API key, build step or server-side agent connector is needed. Keep trips in this browser, check off stops, share them with friends, or ask your own agent to draft a trip file.
 
 Public route: `/trip-planner/`. Canonical source: `tools/trip-planner/` in the public repository. Change history and release notes: [CHANGELOG.md](CHANGELOG.md).
 
@@ -11,7 +11,7 @@ cd tools/trip-planner
 node serve.mjs
 ```
 
-Open http://127.0.0.1:8766 over HTTP; opening index.html directly cannot load the modules. Open **Menu → My trips → Import JSON or GPX**, then select a schema-v1 `.json` file. The imported trip becomes active. Use **Menu → Share and export → Download trip JSON** for a full backup.
+Open http://127.0.0.1:8766 over HTTP; opening index.html directly cannot load the modules. A fresh browser shows an empty start screen with both sample trips and paths to create or import a plan. Choose a sample only when you want to add it. To import a schema-v1 `.json` file later, open **Menu → My trips → Import JSON or GPX**. Use **Menu → Share and export → Download trip JSON** for a full backup.
 
 View days and stops on the map, open directions, check off stops and packing items, and edit or rearrange bases, days and stops. Weather loads automatically for located stops in expanded dated days inside visible, expanded bases. It shows a condition glyph and Celsius low-to-high range; accessible labels and tooltips distinguish forecasts from historical typical conditions. Collapsed days request no new weather and show no summary.
 
@@ -21,7 +21,7 @@ Trips and settings are local to this browser, with no account or API key. Export
 
 ## The shipped example
 
-Two trip samples ship in `samples/`: `sardegna.json` is the only built-in preset, while `portugal-6-day-demo.json` is a six-day, sourced illustrative example with explicit dates and credited Commons photos on every day. Its title and note state “Illustrative demo; not a confirmed travel plan”; its dates are examples, not traveller-confirmed. Portugal is a sample to import manually, not a preset. Both files are starting points for exploration, not claims of current access or bookings. Download the [Sardegna preset JSON](https://projects.metaengineershub.com/trip-planner/samples/sardegna.json) or the [Portugal six-day demo JSON](https://projects.metaengineershub.com/trip-planner/samples/portugal-6-day-demo.json). Other trips are created or imported by the user and stay in that browser's local trip library.
+Two trip samples ship in `samples/` and appear on the empty start screen: `sardegna.json` and `portugal-6-day-demo.json`. Neither is loaded automatically; each is added to the browser's trip library only when selected. Sardegna is also the restorable built-in preset. Portugal is a six-day, sourced illustrative example with explicit dates and credited Commons photos on every day. Its title and note state “Illustrative demo; not a confirmed travel plan”; its dates are examples, not traveller-confirmed. Both files are starting points for exploration, not claims of current access or bookings. Download the [Sardegna sample JSON](https://projects.metaengineershub.com/trip-planner/samples/sardegna.json) or the [Portugal six-day demo JSON](https://projects.metaengineershub.com/trip-planner/samples/portugal-6-day-demo.json). Other trips are created or imported by the user and stay in that browser's local trip library.
 
 ## Plan with an agent
 

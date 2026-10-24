@@ -397,3 +397,19 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;op
   .settings-content{padding-top:18px;padding-bottom:18px}
 }
 @media(prefers-reduced-motion:reduce){.settings-nav .btn,.management-control{transition:none}}
+
+/* A calm, neutral entry point for an empty trip library. */
+.app.is-empty{min-height:calc(100dvh - 66px)}
+.app.is-empty .overview{width:min(1000px,100%);min-height:calc(100dvh - 66px);margin:0 auto;padding:clamp(28px,6vh,64px) 24px;display:flex;flex-direction:column;justify-content:center}
+.app.is-empty .overview-main{display:block}
+.app.is-empty .trip-mark{display:none}
+.app.is-empty .hero{width:100%}
+.empty-screen{max-width:900px;margin:0 auto;color:var(--ink)}
+.empty-screen h1{font-size:clamp(30px,4vw,44px);line-height:1.12;color:#263a33}
+.empty-lead{max-width:620px;margin:12px 0 0;color:var(--muted);font-size:16px;line-height:1.6}
+.first-run-hint{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:22px 0;padding:14px 16px;border:1px solid #c9d9cc;border-radius:16px;background:#eaf1e8;color:#344b3f}
+.first-run-hint p{line-height:1.5}.first-run-hint strong{margin-right:5px}.first-run-dismiss{width:44px;height:44px;flex:none}
+.empty-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:24px 0 10px}.empty-section-head h2,.empty-start h2{color:#31483c;font:700 17px/1.3 var(--font-head);letter-spacing:-.02em}.empty-section-head span{color:var(--muted);font-size:12px}
+.empty-sample-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.empty-sample{display:grid;align-content:start;gap:8px;min-width:0;padding:16px;border:1px solid rgba(92,111,91,.2);border-radius:18px;background:rgba(255,254,250,.82)}.empty-sample h3{color:#2f4439;font:700 16px/1.3 var(--font-head)}.empty-sample p{min-height:40px;color:var(--muted);font-size:13px;line-height:1.5}.empty-sample-action{justify-self:start;min-height:44px}
+.empty-start{margin-top:24px;padding-top:20px;border-top:1px solid rgba(43,79,65,.14)}.empty-start>p{max-width:720px;margin-top:6px;color:var(--muted);font-size:13px;line-height:1.5}.empty-start-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.empty-start-actions .btn{min-height:44px}.empty-privacy{margin:20px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+@media(max-width:760px){.app.is-empty{min-height:calc(100dvh - 60px)}.app.is-empty .overview{min-height:calc(100dvh - 60px);padding:26px 14px 36px}.empty-screen h1{font-size:30px}.empty-lead{font-size:14px}.first-run-hint{align-items:flex-start;padding:12px}.empty-sample-grid{grid-template-columns:minmax(0,1fr)}.empty-sample{padding:14px}.empty-sample p{min-height:0}.empty-start-actions{display:grid;grid-template-columns:minmax(0,1fr)}.empty-start-actions .btn{width:100%}}

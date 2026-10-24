@@ -6,6 +6,7 @@ Notable changes to My Trip Planner are recorded here. This file is also the sour
 
 ### Added
 
+- Added a neutral first-run screen with a dismissible in-app hint, explicit Sardegna and Portugal sample choices, and direct create, agent-skill and import paths.
 - Added the My Trip Planner wordmark with a map-and-route logo and a matching project favicon.
 - Added portable skill installation guidance for clients with skill discovery and for text-only handoff.
 - Added the canonical Agent Skill package at `.agents/skills/trip-planner/`, with `SKILL.md` and supporting references.
@@ -14,6 +15,7 @@ Notable changes to My Trip Planner are recorded here. This file is also the sour
 
 ### Changed
 
+- Fresh browser profiles now start with no trip loaded; existing saved trips remain untouched, and bundled examples are added only when selected.
 - Consolidated header actions into Menu, with This trip and App groups. Settings remains available without an active trip, opens separately on Agent skill each time, and returns focus to Menu on close.
 - Removed the Weather settings section; automatic stop weather and Services provider endpoints remain available.
 - Added canonical GitHub skill/install links, the real-date requirement and clearly labelled illustrative-demo exception, and JSON import steps in Settings.
