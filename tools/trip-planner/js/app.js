@@ -10,6 +10,7 @@ import { acceptsAutoPhoto, canApplyAutoPhoto } from './photos.mjs';
 import { reorderBases, remapDayState, remapPacking } from './bases.mjs';
 
 const $ = (id) => document.getElementById(id);
+const FIRST_RUN_HINT_KEY = 'trip-planner:first-run-hint:v1';
 
 const ui = {
   phase: 'all',           // phase filter: 'all' or phase id
@@ -103,6 +104,7 @@ const visiblePhases = (trip) => trip.phases.map((phase, pi) => ({ phase, pi })).
 /* ---------- render ---------- */
 
 function renderHero(trip) {
+  $('overline').textContent = 'Trip overview';
   const p = progress(trip);
   const days = allDays(trip);
   const dates = new Set(days.map(({ day }) => day.date).filter(Boolean)).size;
@@ -113,6 +115,7 @@ function renderHero(trip) {
     h('p', { class: 'meta', text: [fmtRange(trip.startDate, trip.endDate), trip.destination, `${days.length} days`, `${p.total} stops`].filter(Boolean).join(' · ') })
   );
   $('tripMark').textContent = `${dateLabel} · ${baseLabel}`;
+  $('tripMark').hidden = false;
   $('tripProgress').hidden = false;
   $('tripProgress').replaceChildren(
     h('strong', { text: 'Trip progress' }),
@@ -493,6 +496,10 @@ function mapData(trip) {
 function render() {
   const trip = store.active();
   if (!trip) { showEmpty(); return; }
+  const wasEmpty = $('app').classList.contains('is-empty');
+  $('app').classList.remove('is-empty');
+  $('tripWorkspace').hidden = false;
+  if (wasEmpty) requestAnimationFrame(() => mapView?.map?.resize());
   const focused = document.activeElement;
   const focusRoot = focused?.closest('[id]');
   const focusIndex = focusRoot ? [...focusRoot.querySelectorAll('button,input,select,a')].indexOf(focused) : -1;
@@ -517,18 +524,75 @@ function render() {
   document.title = `${trip.title} · My Trip Planner`;
 }
 
+async function loadSample(name) {
+  try {
+    const result = await store.importSample(name);
+    if (!result.ok) {
+      notice('This sample could not be opened: ' + result.errors.slice(0, 4).map((error) => `${error.path} ${error.message}`).join('; '));
+      return;
+    }
+    const trip = store.active();
+    const firstDay = trip?.phases?.[0]?.days?.[0];
+    ui.open = new Set(firstDay ? [firstDay.dayNumber] : []);
+    ui.focusDay = null;
+    ui.phase = 'all';
+    ui.selectedId = null;
+    notice('');
+    render();
+    requestAnimationFrame(() => { mapView?.map?.resize(); mapView?.fit(); });
+    toast(`Opened ${trip.title}. It is saved in this browser.`);
+  } catch (error) {
+    notice(`Could not load the sample. ${error.message}`);
+  }
+}
+
+function makeFirstRunHint() {
+  let dismissed = false;
+  try { dismissed = localStorage.getItem(FIRST_RUN_HINT_KEY) === 'dismissed'; } catch {}
+  const hint = h('aside', { class: 'first-run-hint', role: 'status', hidden: dismissed },
+    h('p', {}, h('strong', { text: 'First time here?' }), ' Try either demo, plan with your agent, or start from a blank trip. Nothing opens until you choose.'),
+    h('button', { class: 'icon-btn first-run-dismiss', type: 'button', 'aria-label': 'Dismiss getting started hint', onClick: () => {
+      hint.hidden = true;
+      try { localStorage.setItem(FIRST_RUN_HINT_KEY, 'dismissed'); } catch {}
+    } }, '×'));
+  return hint;
+}
+
 function showEmpty() {
   ['shareExportBtn', 'addBaseBtn', 'manageBasesBtn', 'clearTicksBtn'].forEach((id) => { $(id).disabled = true; });
+  $('app').classList.add('is-empty');
+  $('tripWorkspace').hidden = true;
+  $('overline').textContent = 'A fresh start';
+  $('tripMark').textContent = '';
+  $('tripMark').hidden = true;
   $('undoBtn').hidden = true;
   $('mapCaption').textContent = '';
-  $('hero').replaceChildren(h('h1', { text: 'No trips yet' }), h('p', { class: 'summary', text: 'Create a trip, import one, or restore the Sardegna preset.' }),
-    h('div', { class: 'row', style: 'margin-top:12px' },
-      h('button', { class: 'btn btn-primary', type: 'button', text: 'New trip', onClick: () => openMenuPage('new-trip') }),
-      h('button', { class: 'btn', type: 'button', text: 'Restore Sardegna preset', onClick: () => openMenuPage('library') })));
+  const sampleCard = (title, details, action, name) => h('article', { class: 'empty-sample' },
+    h('h3', { text: title }),
+    h('p', { text: details }),
+    h('button', { class: 'btn empty-sample-action', type: 'button', onClick: () => loadSample(name) }, action));
+  $('hero').replaceChildren(h('section', { class: 'empty-screen', 'aria-labelledby': 'emptyTitle' },
+    h('h1', { id: 'emptyTitle', text: 'Plan your next trip, your way' }),
+    h('p', { class: 'empty-lead', text: 'No trip is loaded. Explore a sample or start with a blank itinerary.' }),
+    makeFirstRunHint(),
+    h('section', { class: 'empty-examples', 'aria-labelledby': 'emptyExamplesTitle' },
+      h('div', { class: 'empty-section-head' }, h('h2', { id: 'emptyExamplesTitle', text: 'Take a look around' }), h('span', { text: 'Two sample trips' })),
+      h('div', { class: 'empty-sample-grid' },
+        sampleCard('Sardegna', '12-day sample across the island, with credited day photos.', 'Explore Sardegna', 'sardegna'),
+        sampleCard('Portugal', 'Six-day illustrative demo. Dates are examples, not confirmed travel.', 'Explore Portugal demo', 'portugal'))),
+    h('section', { class: 'empty-start', 'aria-labelledby': 'emptyStartTitle' },
+      h('h2', { id: 'emptyStartTitle', text: 'Or make it yours' }),
+      h('p', { text: 'Use the trip skill with your agent and import its JSON, create a trip yourself, or import a file you already have.' }),
+      h('div', { class: 'empty-start-actions' },
+        h('button', { class: 'btn btn-primary', type: 'button', onClick: () => openMenuPage('new-trip') }, 'Create a trip'),
+        h('button', { class: 'btn', type: 'button', onClick: openAgentGuide }, 'Use with an agent'),
+        h('button', { class: 'btn', type: 'button', onClick: chooseTripFile }, 'Import a trip'))),
+    h('p', { class: 'empty-privacy', text: 'Trips stay in this browser. Samples are added only when you choose one.' })));
   $('list').replaceChildren();
   $('tripProgress').hidden = true;
   $('phaseNav').hidden = true;
   mapView?.setData({ items: [], lines: [] });
+  document.title = 'My Trip Planner';
 }
 
 /* ---------- interaction ---------- */
@@ -1038,6 +1102,11 @@ function pickFile(accept) {
   });
 }
 
+async function chooseTripFile() {
+  const file = await pickFile('.json,.gpx,application/json,application/gpx+xml');
+  if (file) await importFile(file);
+}
+
 /* ---------- library, import, share ---------- */
 
 function syncLibraryActions(trips = store.list()) {
@@ -1119,8 +1188,9 @@ async function importFile(file) {
     try { const g = parseGpx(text); result = store.importTrip(gpxToTrip(g.name, g.track)); } catch (e) { result = { ok: false, errors: [{ path: '/', message: e.message }] }; }
   } else result = store.importText(text);
   if (!result.ok) {
-    err.textContent = 'This file was not imported.\n' + result.errors.slice(0, 8).map((x) => `${x.path} ${x.message}`).join('\n');
-    err.hidden = false;
+    const message = 'This file was not imported. ' + result.errors.slice(0, 8).map((x) => `${x.path} ${x.message}`).join('; ');
+    if ($('tripMenuDlg').open) { err.textContent = message; err.hidden = false; }
+    else notice(message);
     return;
   }
   ui.open.clear(); ui.focusDay = null; ui.phase = 'all';
@@ -1242,6 +1312,15 @@ function openMenuPage(page) {
   if (!$('tripMenuDlg').open) $('tripMenuDlg').showModal();
 }
 
+function openAgentGuide() {
+  if ($('tripMenuDlg').open) $('tripMenuDlg').close();
+  settingsReturningToMenu = false;
+  document.querySelector('[data-settings=agent]').click();
+  fillProviderFields(geo.providers);
+  $('providerError').hidden = true;
+  $('settingsDlg').showModal();
+}
+
 function setupProviders() {
   try {
     const saved = localStorage.getItem('tp-providers');
@@ -1251,14 +1330,7 @@ function setupProviders() {
   document.querySelectorAll('[data-menu-section]').forEach((button) => { button.onclick = () => setMenuSection(button.dataset.menuSection); });
   $('menuClose').onclick = () => $('tripMenuDlg').close();
   $('menuDoneBtn').onclick = () => $('tripMenuDlg').close();
-  $('settingsBtn').onclick = () => {
-    $('tripMenuDlg').close();
-    settingsReturningToMenu = false;
-    document.querySelector('[data-settings=agent]').click();
-    fillProviderFields(geo.providers);
-    $('providerError').hidden = true;
-    $('settingsDlg').showModal();
-  };
+  $('settingsBtn').onclick = openAgentGuide;
   $('settingsBack').onclick = () => {
     settingsReturningToMenu = true;
     $('settingsDlg').close();
@@ -1375,7 +1447,7 @@ function wire() {
   $('undoBtn').onclick = doUndo;
   $('menuBtn').onclick = () => { setMenuSection('trip'); $('tripMenuDlg').showModal(); };
   $('newTripBtn').onclick = () => { $('newTripForm').reset(); setTripPage('new-trip'); };
-  $('importBtn').onclick = async () => { const f = await pickFile('.json,.gpx,application/json,application/gpx+xml'); if (f) importFile(f); };
+  $('importBtn').onclick = chooseTripFile;
   $('presetBtn').onclick = async () => { await store.resetPreset(); ui.open.clear(); $('tripMenuDlg').close(); render(); mapView?.fit(); };
   $('newTripForm').addEventListener('submit', (e) => {
     e.preventDefault();
