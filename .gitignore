@@ -10,4 +10,5 @@
 **/.pytest_cache/
 **/node_modules/
 /dist/
+/dist-*/
 /tools/app-hub/staging/

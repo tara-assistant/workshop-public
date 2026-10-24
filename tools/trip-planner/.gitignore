@@ -1,0 +1,13 @@
+# Project-local plans and working notes are not public by default.
+/plans/
+/notes/
+
+# Local test suites, reports and generated trials stay private unless approved.
+/tests/
+
+# Trip Planner generated build artifacts.
+/_*
+/dist/
+/dist-*/
+
+# Keep .agents/skills/trip-planner/ tracked as the one canonical Agent Skill package.

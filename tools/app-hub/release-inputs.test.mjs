@@ -4,23 +4,28 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { cardHtml, cardsHtml, MAX_CARDS, renderCards, safeHref } from './assets/app-cards.mjs';
+import { cardHtml, cardsHtml, MAX_CARDS, renderCards, safeHref, safeRepo } from './assets/app-cards.mjs';
 import { publicCards, scan, sharedUiAssets, sharedUiSources, validatePublicCatalog } from './release-inputs.mjs';
 
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(projectDir, '../..');
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
-// 12 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder (20 in all).
-test('catalog allowlist has 16 fixed public release files and uses category source roots', () => {
+// 23 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder.
+test('catalog allowlist has 27 fixed public release files and uses category source roots', () => {
   const files = [...validatePublicCatalog(catalog, repositoryRoot, projectDir)];
-  assert.equal(files.length, 16);
+  assert.equal(files.length, 27);
   assert(!files.some(file => /private|projects\.json/.test(file)));
   assert.deepEqual(catalog.projects.map(item => item.sourceRoot), [
     'tools/trip-planner',
     'diagnostics/field-atlas',
     'games/snake'
   ]);
-  assert.equal(catalog.projects[0].build, 'trip-planner-preview');
+  const tripPlanner = catalog.projects.find(item => item.slug === 'trip-planner');
+  assert.deepEqual(tripPlanner.files.filter(file => file.startsWith('samples/')).sort(), [
+    'samples/portugal-6-day-demo.json',
+    'samples/sardegna.json'
+  ]);
+  assert(catalog.projects.every(item => !Object.hasOwn(item, 'build')));
 });
 test('public template has no private navigation or hostname', async () => {
   const template = await readFile(resolve(projectDir, 'index.html'), 'utf8');
@@ -37,14 +42,13 @@ for (const [name, change] of [
   ['unknown source category', item => { item.sourceRoot = 'assets/trip-planner'; }],
   ['absolute Windows source', item => { item.sourceRoot = 'C:/private'; }],
   ['source traversal', item => { item.sourceRoot = 'tools/../private'; }],
-  ['missing Trip Planner bundle builder', item => { delete item.build; }],
   ['unapproved build operation', item => { item.build = 'run-arbitrary-command'; }],
   ['hidden file', item => { item.files.push('.env'); }],
   ['unsupported executable', item => { item.files.push('server.py'); }],
   ['file traversal', item => { item.files.push('../private-hub.html'); }],
   ['case collision', item => { item.files.push('INDEX.HTML'); }],
-  ['file/directory collision', item => { item.files.push('app.js/index.html'); }],
-  ['missing entry point', item => { item.files = ['app.js']; }],
+  ['file/directory collision', item => { item.files.push('js/app.js/index.html'); }],
+  ['missing entry point', item => { item.files = ['js/app.js']; }],
   ['Windows device', item => { item.files.push('CON.html'); }]
 ]) {
   test(`reject ${name}`, () => {
@@ -55,7 +59,7 @@ for (const [name, change] of [
 }
 test('reject build operation on an unapproved route', () => {
   const changed = structuredClone(catalog);
-  changed.projects[1].build = 'trip-planner-preview';
+  changed.projects[1].build = 'run-arbitrary-command';
   assert.throws(() => validatePublicCatalog(changed, repositoryRoot, projectDir));
 });
 test('scan byte encodings and expanded credential formats', () => {
@@ -87,7 +91,19 @@ test('app cards escape hostile text instead of rendering markup', () => {
   const html = cardHtml({ ...goodCard, title: '<img src=x onerror=alert(1)>', description: '"><script>alert(1)</script>', category: "x' onmouseover='y", privacy: '&<>' });
   assert.doesNotMatch(html, /<img|<script|' onmouseover/);
   assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
-  assert.match(html, /aria-label="Open project: &lt;img/);
+  assert.match(html, /aria-label="Open &lt;img/);
+});
+test('app rows carry a Live button and a Repo button into the public repository', () => {
+  const repo = 'https://github.com/tara-assistant/workshop-public/tree/main/tools/trip-planner';
+  const html = cardHtml({ ...goodCard, repo });
+  assert.match(html, /class="btn-live"[^>]*href="\/example\/"/);
+  assert.match(html, new RegExp(`class="btn-repo"[^>]*href="${repo}"`));
+  assert.doesNotMatch(cardHtml(goodCard), /btn-repo/);
+  for (const bad of ['javascript:alert(1)', 'https://example.com/x', 'http://github.com/tara-assistant/workshop-public/tree/main/x', 'https://github.com/other/workshop-public/tree/main/x', repo + '/../..', repo + '?a=1']) {
+    assert.throws(() => safeRepo(bad), bad);
+    assert.throws(() => cardHtml({ ...goodCard, repo: bad }), bad);
+  }
+  assert(publicCards(catalog).every(card => card.repo.startsWith('https://github.com/tara-assistant/workshop-public/tree/main/')));
 });
 test('app card links accept only same-site routes', () => {
   for (const href of ['javascript:alert(1)', 'https://example.com/', '//example.com/', '/../x/', '/x', '/x/?a=1', '/X/', ' /x/', 'data:text/html,x']) {

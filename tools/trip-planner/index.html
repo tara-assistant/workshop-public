@@ -2,305 +2,293 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Trip Planner · 3D Travel Itineraries</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>My Trip Planner</title>
+  <meta name="description" content="My Trip Planner is a keyless trip planner. Plan days on an open map, check forecasts, and import a trip drafted with your own agent.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
 </head>
-<body class="mobile-app">
-  <div class="app-layout">
-    <!-- Floating Glass Header (Glassmorphic) -->
-    <header class="floating-header">
-      <div class="nav-left">
-        <button class="btn-pill" id="appSwitcherBtn" title="Tesseract Apps">
-          <span class="icon">⊞</span>
-        </button>
-        <div class="brand-badge">
-          <span class="icon">🧭</span>
-          <span class="text">Trip Planner</span>
-        </div>
-      </div>
-      <div class="nav-right">
-        <select class="trip-picker" id="tripSelect" title="Select Itinerary"></select>
-        <button class="btn-pill btn-accent-terra" id="newPlanBtn">+ New</button>
-      </div>
-    </header>
-
-    <!-- App Switcher Dropdown Overlay -->
-    <div class="app-switcher-overlay" id="appSwitcherOverlay">
-      <div class="app-switcher-card">
-        <div class="switcher-title-row">
-          <span>TESSERACT APPS</span>
-          <button class="close-btn" id="closeSwitcherBtn">×</button>
-        </div>
-        <div class="switcher-list">
-          <div class="switcher-row active" id="openTripPlanner">
-            <span class="item-icon">🧭</span>
-            <div>
-              <strong>Trip Planner</strong>
-              <small>3D routes, hikes & city itineraries</small>
-            </div>
-          </div>
-          <a href="https://0e7393a3.workshop-47y.pages.dev" target="_blank" class="switcher-row">
-            <span class="item-icon">⊞</span>
-            <div>
-              <strong>Apps Launchpad</strong>
-              <small>All registered mobile mini apps</small>
-            </div>
-          </a>
-          <a href="https://d469c729.workshop-47y.pages.dev" target="_blank" class="switcher-row">
-            <span class="item-icon">◈</span>
-            <div>
-              <strong>Field Atlas</strong>
-              <small>Infrastructure diagnostics & map</small>
-            </div>
-          </a>
-          <a href="https://projects.metaengineershub.com/snake/" target="_blank" class="switcher-row">
-            <span class="item-icon">🕹️</span>
-            <div>
-              <strong>Snake Arcade</strong>
-              <small>Retro mobile arcade game</small>
-            </div>
-          </a>
-          <a href="https://projects.metaengineershub.com/tara/" target="_blank" class="switcher-row">
-            <span class="item-icon">✨</span>
-            <div>
-              <strong>Tara Assistant</strong>
-              <small>AI portfolio & system overview</small>
-            </div>
-          </a>
-        </div>
-      </div>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="My Trip Planner home">
+      <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="14" fill="var(--leaf)"/><path d="m10 13 10-3 9 3.5L38 10v24.5L29 38l-9-3.5L10 38V13Z" fill="none" stroke="var(--panel)" stroke-width="2" stroke-linejoin="round"/><path d="M20 10v24.5M29 13.5V38" fill="none" stroke="var(--panel)" stroke-width="1.7"/><path d="M13 30c4-5.5 6.5 1 11-4 2-2 2-4.5 5-5.5" fill="none" stroke="#e6bd69" stroke-width="2.5" stroke-linecap="round"/><circle cx="29" cy="20.5" r="2.3" fill="#e6bd69" stroke="var(--panel)" stroke-width="1"/></svg>
+      <span>My Trip Planner</span>
+    </a>
+    <div class="header-actions">
+      <button class="icon-btn" id="menuBtn" type="button" aria-haspopup="dialog" aria-label="Menu" title="Menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg></button>
     </div>
+  </header>
 
-    <!-- Map Canvas Viewport -->
-    <div class="map-canvas-container">
-      <div id="map"></div>
+  <div class="notice" id="notice" role="status" hidden></div>
 
-      <!-- Floating Map Layer Controls (Wanderlog / Google Earth style) -->
-      <div class="map-floating-actions">
-        <button class="map-circle-btn active" id="styleDarkBtn" title="Dark 3D Mode">🗺️</button>
-        <button class="map-circle-btn" id="styleSatBtn" title="Satellite Imagery">🛰️</button>
-        <button class="map-circle-btn" id="styleOutdoorsBtn" title="Topographic Trails">🥾</button>
-        <button class="map-circle-btn" id="terrainToggleBtn" title="3D Terrain / Komoot Topography">⛰️</button>
-        <div class="map-btn-divider"></div>
-        <button class="map-circle-btn toggle-3d-btn active" id="pitchToggleBtn" title="Toggle 2D / 3D Mode">
-          <span id="pitchToggleText">3D</span>
-        </button>
-        <button class="map-circle-btn" id="fitRouteBtn" title="Fit Entire Route">⤢</button>
-        <button class="map-circle-btn" id="locateBtn" title="Find My Location">📍</button>
+  <main id="app" class="app">
+    <section class="overview" aria-label="Trip overview">
+      <div class="overline">Trip overview</div>
+      <div class="overview-main">
+        <div class="title-block"><div class="hero" id="hero" aria-live="polite"></div></div>
+        <div class="trip-mark" id="tripMark" aria-label="Trip dates and bases"></div>
       </div>
-
-      <!-- Quick Floating Sheet Toggle on Mobile Map View -->
-      <button class="map-sheet-peek-btn" id="mapSheetPeekBtn">
-        <span class="peek-icon">📋</span>
-        <span id="mapSheetPeekText">Itinerary · 5 Stops</span>
-        <span class="peek-arrow">⌃</span>
-      </button>
+      <section class="progress-row" id="tripProgress" aria-label="Trip progress"></section>
+      <nav class="phase-nav" id="phaseNav" aria-label="Filter itinerary by base"></nav>
+    </section>
+    <div class="layout">
+      <aside class="map-panel" aria-label="Map">
+        <div class="map-frame" id="mapFrame">
+          <div id="map" role="application" aria-label="Trip map"></div>
+          <span class="map-caption" id="mapCaption" role="status"></span>
+          <button class="map-layers-btn" id="toolsBtn" type="button" aria-expanded="false" aria-controls="mapTools" aria-label="Map controls" title="Map controls"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="m3 8.5 9-5 9 5-9 5-9-5Zm0 7 9 5 9-5M3 12l9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>
+          <div class="map-tools" id="mapTools" role="group" aria-label="Map controls" hidden>
+            <div class="map-style-options" role="group" aria-label="Map style">
+              <button class="map-style" type="button" data-layer="map" aria-pressed="true" aria-label="Standard map" title="Standard map"><svg viewBox="0 0 36 30" aria-hidden="true"><path d="M2 5 12 2l11 4 11-3v22l-11 3-11-4-10 3V5Z" fill="#edf4e8" stroke="currentColor" stroke-width="1.4"/><path d="m12 2 1 22m10-18v22M3 17l9-3 11 4 10-3M3 9l9-3 11 4 10-3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m3 23 10-3 10 4 10-3" fill="none" stroke="#3f866d" stroke-width="2"/></svg><span>Standard</span></button>
+              <button class="map-style" type="button" data-layer="sat" aria-pressed="false" aria-label="Satellite imagery" title="Satellite imagery"><svg viewBox="0 0 36 30" aria-hidden="true"><rect x="2" y="2" width="32" height="26" rx="5" fill="#dfe7d0" stroke="currentColor" stroke-width="1.4"/><path d="M5 20c5-6 8-5 12-1 4-7 8-8 14-4v10H5Z" fill="#91a879"/><path d="M4 7c4 2 8 2 12-1 3 4 8 5 16 3" fill="none" stroke="#c2a66a" stroke-width="2"/><circle cx="26" cy="10" r="3" fill="#6c9187"/></svg><span>Satellite</span></button>
+            </div>
+            <button class="map-action" type="button" id="tilt" aria-pressed="false" aria-label="Toggle 3D terrain" title="3D terrain"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5m-18 5 9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span>3D</span></button>
+            <button class="map-action" type="button" id="zoomIn" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16 21 21M10.8 7.5v6.6m-3.3-3.3h6.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Zoom in</span></button>
+            <button class="map-action" type="button" id="zoomOut" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16 21 21M7.5 10.8h6.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Zoom out</span></button>
+            <button class="map-action map-action-icon" type="button" id="compass" aria-label="Reset north" title="Reset north"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m15.5 8.5-2.3 5-4.7 2 2-4.8 5-2.2Z" fill="currentColor"/><path d="M12 3v2" stroke="currentColor" stroke-width="1.6"/></svg></button>
+            <button class="map-action map-action-icon" type="button" id="resetMap" aria-label="Reset map view" title="Reset map view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2 6M4 5v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="map-action map-action-icon" type="button" id="fit" aria-label="Fit trip to map" title="Fit trip to map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button>
+            <button class="map-action" type="button" id="gps" aria-pressed="false" aria-label="Show my location" title="Show my location"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>My location</span></button>
+          </div>
+          <p class="map-status" id="gpsStatus" role="status" hidden></p>
+        </div>
+      </aside>
+      <section class="list" id="list" aria-label="Itinerary" tabindex="0"></section>
     </div>
-
-    <!-- Itinerary Bottom Sheet (Mobile Tri-State: Peek / Half / Full) & Desktop Sidebar -->
-    <aside class="itinerary-drawer is-half" id="itineraryPanel">
-      <!-- Interactive Drag / Tap Handle -->
-      <div class="drawer-drag-handle" id="sheetHandle">
-        <div class="drag-pill"></div>
-        <div class="handle-info-bar">
-          <div class="handle-title-group">
-            <span class="handle-plan-title" id="handleTitle">Trip Plan</span>
-            <span class="handle-plan-meta" id="handleMeta">Loading stops...</span>
-          </div>
-          <div class="handle-controls">
-            <button class="sheet-state-pill" id="sheetStateToggle" title="Expand or collapse sheet">⤢ View List</button>
-          </div>
+  </main>
+  <dialog id="tripMenuDlg" class="menu-dialog" aria-labelledby="tripMenuTitle">
+    <div class="settings-shell menu-shell">
+      <header class="settings-shell-head">
+        <div class="settings-heading"><span class="settings-eyebrow">My Trip Planner</span><h2 id="tripMenuTitle">Menu</h2></div>
+        <button class="icon-btn settings-close" id="menuClose" type="button" aria-label="Close Menu">×</button>
+      </header>
+      <div class="settings-main">
+        <aside class="settings-rail">
+          <p class="settings-rail-label">Menu</p>
+          <nav class="settings-nav" aria-label="Menu sections">
+            <button class="btn" type="button" data-menu-section="trip" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5"/></svg><span>This trip</span></button>
+            <button class="btn" type="button" data-menu-section="app" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg><span>App</span></button>
+          </nav>
+        </aside>
+        <div class="settings-content menu-content" id="menuContent">
+          <section data-menu-content="trip">
+            <div class="menu-page" data-trip-page="home">
+              <h3 tabindex="-1">This trip</h3>
+              <p class="settings-lead">Manage and share the current itinerary.</p>
+              <div class="menu-action-list">
+                <button class="btn menu-action" id="libraryBtn" type="button"><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v15H4zM8 9h8M8 13h6"/></svg><span class="menu-action-copy"><strong>My trips</strong><small>Open and manage trips saved in this browser.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                <button class="btn menu-action" id="shareExportBtn" type="button"><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m-5 5 5-5 5 5M5 13v7h14v-7"/></svg><span class="menu-action-copy"><strong>Share and export</strong><small>Download or share a copy of this trip.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                <button class="btn menu-action" id="undoBtn" type="button" hidden><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h9a7 7 0 1 1 0 14h-2"/></svg><span class="menu-action-copy"><strong>Undo</strong><small>Reverse the last trip change.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                <button class="btn menu-action" id="addBaseBtn" type="button"><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="menu-action-copy"><strong>Add a base</strong><small>Add another location to the itinerary.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                <button class="btn menu-action" id="manageBasesBtn" type="button"><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m-5-11 5-5 5 5m-10 6 5 5 5-5"/></svg><span class="menu-action-copy"><strong>Manage bases</strong><small>Choose a base and change its order.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+                <button class="btn menu-action menu-action-danger" id="clearTicksBtn" type="button"><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v14H5zM8 12l2.5 2.5L16 9"/></svg><span class="menu-action-copy"><strong>Clear ticks</strong><small>Reset visited and packing checkmarks.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+              </div>
+            </div>
+            <section class="menu-page menu-subpage" data-trip-page="library" hidden>
+              <button class="btn menu-page-back" type="button" data-menu-back="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg><span>This trip</span></button>
+              <h3 tabindex="-1">My trips</h3>
+              <p class="settings-lead">Open and manage trips saved in this browser.</p>
+              <ul class="trip-list" id="tripList" role="radiogroup" aria-label="Choose a trip"></ul>
+              <section class="management-actions" id="tripActions" aria-labelledby="tripActionsTitle" hidden>
+                <div class="management-copy"><h4 id="tripActionsTitle">Selected trip</h4><p class="hint" id="selectedTripSummary" role="status" aria-live="polite"></p></div>
+                <div class="management-controls trip-control-buttons">
+                  <button class="btn btn-primary management-control" id="openSelectedTripBtn" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6M4 5v14"/></svg><span>Open</span></button>
+                  <button class="btn management-control" id="duplicateSelectedTripBtn" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8V4h12v12h-4M4 8h12v12H4z"/></svg><span>Duplicate</span></button>
+                  <button class="btn btn-danger management-control" id="deleteSelectedTripBtn" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 11v6m4-6v6M6.5 7l.8 14h9.4l.8-14M9 7V4h6v3"/></svg><span>Delete</span></button>
+                </div>
+              </section>
+              <div class="menu-page-actions">
+                <button class="btn btn-primary" id="newTripBtn" type="button">New trip</button>
+                <button class="btn" id="importBtn" type="button">Import JSON or GPX</button>
+                <button class="btn" id="presetBtn" type="button">Restore Sardegna preset</button>
+              </div>
+              <p class="hint">Trips are saved in this browser only. Export a trip to keep a copy or hand it to an agent.</p>
+              <p class="error" id="importError" role="alert" hidden></p>
+            </section>
+            <section class="menu-page menu-subpage" data-trip-page="new-trip" hidden>
+              <button class="btn menu-page-back" type="button" data-menu-back="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg><span>My trips</span></button>
+              <h3 tabindex="-1">New trip</h3>
+              <p class="settings-lead">Start an itinerary with a name, destination, and confirmed first date.</p>
+              <form id="newTripForm" class="menu-inline-form">
+                <label>Trip name<input id="ntTitle" required maxlength="160" placeholder="Dolomites in June"></label>
+                <label>Destination<input id="ntDest" maxlength="160" placeholder="Dolomites, Italy"></label>
+                <label>First day (required)<input id="ntDate" type="date" required></label>
+                <div class="menu-page-actions"><button class="btn btn-primary" value="ok">Create trip</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>
+              </form>
+            </section>
+            <section class="menu-page menu-subpage" data-trip-page="share" hidden>
+              <button class="btn menu-page-back" type="button" data-menu-back="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg><span>This trip</span></button>
+              <h3 tabindex="-1">Share and export</h3>
+              <p class="settings-lead">Download, print, or share a copy of this trip.</p>
+              <div class="menu-page-actions">
+                <button class="btn" id="exportJson" type="button">Download trip JSON</button>
+                <button class="btn" id="exportGpx" type="button">Download GPX</button>
+                <button class="btn" id="printBtn" type="button">Print</button>
+              </div>
+              <section class="menu-share-section">
+                <h4>Share by link</h4>
+                <p class="hint">The whole trip is packed into the link. Nothing is uploaded.</p>
+                <button class="btn" id="shareBtn" type="button">Copy share link</button>
+                <p class="hint" id="shareInfo" role="status" aria-live="polite"></p>
+              </section>
+            </section>
+            <section class="menu-page menu-subpage" data-trip-page="add-base" hidden>
+              <button class="btn menu-page-back" type="button" data-menu-back="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg><span>This trip</span></button>
+              <h3 tabindex="-1">Add a base</h3>
+              <p class="settings-lead">Add another location to the current itinerary.</p>
+              <form id="baseForm" class="menu-inline-form">
+                <label>Base name<input id="baseName" required maxlength="120" placeholder="For example, Cagliari"></label>
+                <div class="menu-page-actions"><button class="btn btn-primary" type="submit">Add base</button><button class="btn" type="button" data-menu-back="home">Cancel</button></div>
+              </form>
+            </section>
+            <section class="menu-page menu-subpage" data-trip-page="bases" hidden>
+              <button class="btn menu-page-back" type="button" data-menu-back="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg><span>This trip</span></button>
+              <h3 tabindex="-1">Manage bases</h3>
+              <p class="settings-lead">Choose a base and change its order.</p>
+              <ul class="base-list" id="basesList" role="radiogroup" aria-label="Choose a base"></ul>
+              <section class="management-actions" id="baseActions" aria-labelledby="baseActionsTitle" hidden>
+                <div class="management-copy"><h4 id="baseActionsTitle">Selected base</h4><p class="hint" id="selectedBaseSummary" role="status" aria-live="polite"></p></div>
+                <div class="management-controls base-control-buttons">
+                  <button class="btn management-control" id="moveBaseUpBtn" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"/></svg><span>Move up</span></button>
+                  <button class="btn management-control" id="moveBaseDownBtn" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6"/></svg><span>Move down</span></button>
+                </div>
+              </section>
+            </section>
+            <section class="menu-page menu-subpage" data-trip-page="clear-ticks" hidden>
+              <button class="btn menu-page-back" type="button" data-menu-back="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg><span>This trip</span></button>
+              <h3 tabindex="-1">Clear ticks</h3>
+              <p class="settings-lead">Reset visited stops and packing checkmarks for this trip. You can undo this change.</p>
+              <div class="menu-page-actions"><button class="btn btn-danger" id="clearTicksConfirmBtn" type="button">Clear all ticks</button><button class="btn" type="button" data-menu-back="home">Cancel</button></div>
+            </section>
+          </section>
+          <section data-menu-content="app" hidden>
+            <h3 tabindex="-1">App</h3>
+            <p class="settings-lead">Settings and project information.</p>
+            <div class="menu-action-list">
+              <button class="btn menu-action" id="settingsBtn" type="button" aria-haspopup="dialog"><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span class="menu-action-copy"><strong>Settings</strong><small>Review guidance, services, and app information.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+              <a class="btn menu-action" href="https://github.com/tara-assistant/workshop-public/tree/main/tools/trip-planner" target="_blank" rel="noopener noreferrer"><svg class="menu-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-13-4 16"/></svg><span class="menu-action-copy"><strong>Source on GitHub</strong><small>View the project's public source.</small></span><svg class="menu-action-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
+            </div>
+          </section>
         </div>
       </div>
-
-      <div class="drawer-scroll-body">
-        <!-- Trip Hero Card -->
-        <div class="trip-hero">
-          <div class="hero-top-row">
-            <span class="hero-category" id="planBadge">Travel Route</span>
-            <span class="hero-region" id="planRegion">Italy</span>
-            <div class="hero-actions">
-              <button class="icon-btn-danger" id="deletePlanBtn" title="Delete Plan">🗑️</button>
-            </div>
-          </div>
-          <h2 class="hero-title" id="planHeading">Itinerary</h2>
-          <p class="hero-desc" id="planSummary">Highlights and trail itinerary.</p>
-
-          <!-- Interactive Progress Ring / Bar -->
-          <div class="hero-progress-section">
-            <div class="progress-bar-track">
-              <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
-            </div>
-            <div class="progress-info-row">
-              <span class="progress-label" id="progressLabel">0 of 0 stops visited (0%)</span>
-              <button class="link-btn-subtle" id="resetCheckboxesBtn" title="Clear checked stops">Clear Checks</button>
-            </div>
-          </div>
-
-          <div class="hero-stats">
-            <div class="stat-cell"><small>STOPS</small><strong id="statStops">0</strong></div>
-            <div class="stat-cell"><small>DISTANCE</small><strong id="statDist">0 km</strong></div>
-            <div class="stat-cell"><small>DURATION</small><strong id="statDuration">Flexible</strong></div>
-          </div>
-
-          <!-- Multi-Day Selector Carousel -->
-          <div class="day-tabs-container">
-            <div class="day-tabs-scroll" id="dayTabsCarousel"></div>
-          </div>
-
-          <!-- Category Filter Chips -->
-          <div class="filter-carousel" id="filterChips">
-            <button class="filter-chip active" data-type="all">All</button>
-            <button class="filter-chip" data-type="gem">💎 Gems</button>
-            <button class="filter-chip" data-type="sight">🏛️ Sights</button>
-            <button class="filter-chip" data-type="hike">🥾 Hikes</button>
-            <button class="filter-chip" data-type="dining">🍷 Food</button>
-            <button class="filter-chip" data-type="cafe">☕ Cafes</button>
-            <button class="filter-chip" data-type="swim">🏖️ Beach</button>
-            <button class="filter-chip" data-type="boat">⛵ Boat</button>
-          </div>
-        </div>
-
-        <!-- Timeline Section -->
-        <div class="timeline-container">
-          <div class="timeline-header">
-            <div class="timeline-heading-group">
-              <h3 id="timelineHeaderTitle">Today's Itinerary</h3>
-              <span class="timeline-meta" id="timelineCount">0 stops</span>
-            </div>
-            <button class="btn-pill btn-accent-cyan" id="addStopBtn">+ Add Stop</button>
-          </div>
-
-          <!-- Stop Cards Feed -->
-          <div class="stops-feed" id="stopsFeed"></div>
-        </div>
-
-        <!-- Trip Settings Footer inside Drawer -->
-        <div class="drawer-footer">
-          <button class="btn-pill btn-outline" id="beamToTaraBtn">Export trip JSON</button>
-          <button class="btn-pill btn-outline" id="resetDefaultsBtn">Reset Demo Plans</button>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Modal: Add Custom Stop -->
-    <div class="modal-overlay" id="addStopModal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <h3>Add Custom Itinerary Stop</h3>
-          <button class="close-btn" id="closeAddStopBtn">×</button>
-        </div>
-        <form class="modal-form" id="addStopForm">
-          <div class="form-group">
-            <label for="inputStopName">Stop Name</label>
-            <input type="text" id="inputStopName" required placeholder="e.g. Viewpoint, Trattoria, Trailhead" />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputStopType">Type</label>
-              <select id="inputStopType">
-                <option value="sight">🏛️ Sight / Culture</option>
-                <option value="gem">💎 Hidden Gem</option>
-                <option value="hike">🥾 Hike / Scenic Trail</option>
-                <option value="dining">🍷 Dining / Dinner</option>
-                <option value="cafe">☕ Cafe / Breakfast</option>
-                <option value="swim">🏖️ Beach / Swimming</option>
-                <option value="boat">⛵ Boat / Water Ferry</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="inputStopTime">Target Time</label>
-              <input type="text" id="inputStopTime" placeholder="e.g. 10:30 AM" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputStopLat">Latitude</label>
-              <input type="number" step="any" id="inputStopLat" required placeholder="45.4642" />
-            </div>
-            <div class="form-group">
-              <label for="inputStopLng">Longitude</label>
-              <input type="number" step="any" id="inputStopLng" required placeholder="9.1900" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="inputStopWhy">Why Visit</label>
-            <textarea id="inputStopWhy" rows="2" placeholder="What makes this stop memorable?"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="inputStopTips">Practical Tips</label>
-            <input type="text" id="inputStopTips" placeholder="Parking, entrance tips, best time to arrive" />
-          </div>
-          <div class="form-group">
-            <label for="inputStopFood">Local Specialty</label>
-            <input type="text" id="inputStopFood" placeholder="Dish, wine, or drink recommendation" />
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-pill" id="cancelStopBtn">Cancel</button>
-            <button type="submit" class="btn-pill btn-accent-cyan">Add to Itinerary</button>
-          </div>
-        </form>
-      </div>
+      <footer class="settings-footer"><p class="settings-foot-note">Trips are saved in this browser only.</p><div class="settings-footer-actions"><button class="btn" id="menuDoneBtn" type="button">Done</button></div></footer>
     </div>
-
-    <!-- Modal: New Plan -->
-    <div class="modal-overlay" id="newPlanModal">
-      <div class="modal-dialog">
-        <div class="modal-header">
-          <h3>Create New Trip Plan</h3>
-          <button class="close-btn" id="closeNewPlanBtn">×</button>
-        </div>
-        <form class="modal-form" id="newPlanForm">
-          <div class="form-group">
-            <label for="inputPlanTitle">Trip Name</label>
-            <input type="text" id="inputPlanTitle" required placeholder="e.g. Amalfi Coast Explorer" />
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputPlanRegion">Region / City</label>
-              <input type="text" id="inputPlanRegion" required placeholder="e.g. Campania, Italy" />
-            </div>
-            <div class="form-group">
-              <label for="inputPlanCategory">Trip Style</label>
-              <select id="inputPlanCategory">
-                <option value="Scenic Coastal Road">Scenic Coastal Road</option>
-                <option value="Mountain Hike">Mountain Hike & Ridge</option>
-                <option value="Historic City Walk">Historic City Walk</option>
-                <option value="Culinary & Wine Tour">Culinary & Wine Tour</option>
-                <option value="Hidden Gems">Hidden Gems Expedition</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="inputPlanDesc">Trip Description</label>
-            <textarea id="inputPlanDesc" rows="3" placeholder="Brief outline of this journey..."></textarea>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="inputPlanLat">Starting Latitude</label>
-              <input type="number" step="any" id="inputPlanLat" required placeholder="40.6333" />
-            </div>
-            <div class="form-group">
-              <label for="inputPlanLng">Starting Longitude</label>
-              <input type="number" step="any" id="inputPlanLng" required placeholder="14.6029" />
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button type="button" class="btn-pill" id="cancelPlanBtn">Cancel</button>
-            <button type="submit" class="btn-pill btn-accent-terra">Create Trip Plan</button>
-          </div>
-        </form>
+  </dialog>
+  <dialog id="stopDlg" aria-labelledby="stopTitle">
+    <form id="stopForm" class="dlg-form" method="dialog">
+      <div class="dlg-head"><h2 id="stopTitle">Stop</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
+      <label>Search a place<input id="sfSearch" type="search" autocomplete="off" placeholder="Type a place, then press Search"></label>
+      <button class="btn" id="sfGo" type="button">Search</button>
+      <ul class="results" id="sfResults" role="listbox" aria-label="Place results"></ul>
+      <p class="hint" id="sfPickHint">Or tap Pick on map, then tap the map.</p>
+      <div class="row"><button class="btn" id="sfPick" type="button">Pick on map</button></div>
+      <label>Name<input id="sfName" required maxlength="160"></label>
+      <div class="two">
+        <label>Type<select id="sfType"></select></label>
+        <label>Time<input id="sfTime" maxlength="40" placeholder="09:30"></label>
       </div>
-    </div>
+      <div class="two">
+        <label>Stay (minutes)<input id="sfDwell" type="number" min="0" max="1440" step="5"></label>
+        <label>Tags<input id="sfTags" placeholder="swim, gem, book"></label>
+      </div>
+      <label>Notes<textarea id="sfDesc" rows="3" maxlength="1200"></textarea></label>
+      <details id="stopAdvanced" class="advanced"><summary>Advanced</summary>
+      <div class="two">
+        <label>Latitude<input id="sfLat" type="number" step="any" min="-85" max="85" required></label>
+        <label>Longitude<input id="sfLon" type="number" step="any" min="-180" max="180" required></label>
+      </div>
+      <label>Link (https)<input id="sfLink" type="url" placeholder="https://"></label>
+      <label>Link label<input id="sfLinkLabel" maxlength="80" placeholder="Website"></label>
+      <button class="btn" id="sfFindPhoto" type="button">Find a photo</button>
+      <p class="hint" id="sfPhotoStatus" role="status">Photos from Wikipedia and Wikimedia Commons. Check that the photo shows this stop.</p>
+      <div class="photo-candidates" id="sfPhotos"></div>
+      <label>Paste image URL<input id="sfImage" type="url" placeholder="https://upload.wikimedia.org/..."></label>
+      <label>Photo credit<input id="sfCredit" maxlength="200" placeholder="Author, licence"></label>
+      </details>
+      <p class="error" id="sfError" role="alert" hidden></p>
+      <div class="row"><button class="btn btn-primary" value="ok">Save stop</button><button class="btn" value="cancel" formnovalidate>Cancel</button></div>
+    </form>
+  </dialog>
 
-    <!-- Toast Notification Overlay -->
-    <div class="toast-container" id="toastContainer"></div>
-  </div>
+  <dialog id="dayDlg" aria-labelledby="dayTitle">
+    <form id="dayForm" class="dlg-form" method="dialog">
+      <div class="dlg-head"><h2 id="dayTitle">Day</h2><button class="icon-btn" value="cancel" aria-label="Close" formnovalidate>×</button></div>
+      <label>Title<input id="dfTitle" required maxlength="160"></label>
+      <div class="two">
+        <label>Date<input id="dfDate" type="date"></label>
+        <label>Travel mode<select id="dfMode"><option value="walking">Walking</option><option value="cycling">Cycling</option><option value="driving">Driving</option></select></label>
+      </div>
+      <label>Base (phase)<select id="dfPhase"></select></label>
+      <label>Tips, one per line<textarea id="dfTips" rows="3"></textarea></label>
+      <label>Food and drink<input id="dfFood" maxlength="600"></label>
+      <label>Packing, one per line<textarea id="dfPacking" rows="2"></textarea></label>
+      <label>Day photo (https)<input id="dfPhoto" type="url" placeholder="https://commons.wikimedia.org/wiki/Special:FilePath/..."></label>
+      <label>Photo credit (author · licence)<input id="dfCredit" maxlength="200" placeholder="Author · CC BY-SA 4.0"></label>
+      <label>Photo source page (https)<input id="dfPhotoSource" type="url" placeholder="https://commons.wikimedia.org/wiki/File:..."></label>
+      <label>Photo licence link (https)<input id="dfPhotoLicense" type="url" placeholder="https://creativecommons.org/licenses/..."></label>
+      <div class="row"><button class="btn btn-primary" value="ok">Save day</button><button class="btn btn-danger" id="dfDelete" type="button">Delete day</button></div>
+    </form>
+  </dialog>
 
-  <script src="app.js"></script>
+  <dialog id="settingsDlg" class="settings-dialog" aria-labelledby="settingsTitle">
+    <form id="providerForm" class="settings-shell" method="dialog">
+      <header class="settings-shell-head">
+        <button class="btn settings-back" id="settingsBack" type="button" aria-label="Back to Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h11"/></svg><span>Menu</span></button>
+        <div class="settings-heading"><span class="settings-eyebrow">My Trip Planner</span><h2 id="settingsTitle">Settings</h2></div>
+        <button class="icon-btn settings-close" id="settingsClose" type="button" aria-label="Close Settings">×</button>
+      </header>
+      <div class="settings-main">
+        <aside class="settings-rail">
+          <p class="settings-rail-label">Preferences</p>
+          <nav class="settings-nav" aria-label="Settings sections">
+            <button class="btn" type="button" data-settings="agent" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z"/><path d="M4 17a2.5 2.5 0 0 1 2.5-2.5H20M8 7h8M8 10h6"/></svg><span>Agent skill</span></button>
+            <button class="btn" type="button" data-settings="services" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3.5 9h17M3.5 15h17M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span>Services</span></button>
+            <button class="btn" type="button" data-settings="about" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>About</span></button>
+          </nav>
+        </aside>
+        <div class="settings-content" id="settingsContent">
+          <section data-settings-content="agent">
+            <h3>Plan with your agent</h3>
+            <p class="settings-lead">Use the portable skill to prepare a trip file, then import it here. The skill works independently of this app.</p>
+            <article class="settings-card"><h4>My Trip Planner skill</h4><p>Use the portable <a href="https://github.com/tara-assistant/workshop-public/blob/main/tools/trip-planner/.agents/skills/trip-planner/SKILL.md" target="_blank" rel="noopener noreferrer">My Trip Planner skill</a> and its <a href="https://github.com/tara-assistant/workshop-public/blob/main/tools/trip-planner/.agents/skills/trip-planner/README.md" target="_blank" rel="noopener noreferrer">install README</a> to research a schema-v1 JSON trip. It does not connect to or control this app.</p></article>
+            <article class="settings-card"><h4>Dates matter</h4><p>Provide real, confirmed start and end dates and a date for every day. The agent must ask and wait for missing dates. Only an explicitly requested illustrative demo may use disclosed example dates; its title and note must clearly label it as illustrative, not a real travel plan.</p></article>
+            <article class="settings-card"><h4>Import a plan</h4><ol><li>Install the skill or give SKILL.md to your agent, then request your trip.</li><li>Save the returned trip as a .json file.</li><li>Open Menu → My trips → Import JSON or GPX and choose the JSON file.</li><li>Export JSON from Menu → Share and export to keep a full backup.</li></ol></article>
+          </section>
+          <section data-settings-content="services" hidden>
+            <h3>Services and credits</h3>
+            <p class="settings-lead">Public services power the map, place search, directions, weather and trip photos.</p>
+            <article class="settings-card"><h4>Map and route services</h4><ul class="service-list">
+              <li><strong>Map:</strong> <a href="https://maplibre.org/" target="_blank" rel="noopener noreferrer">MapLibre GL</a>, <a href="https://openfreemap.org/" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> and <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>. Required map attribution remains visible beside the map.</li>
+              <li><strong>Satellite:</strong> <a href="https://s2maps.eu/" target="_blank" rel="noopener noreferrer">EOX Sentinel-2 cloudless</a>, containing modified Copernicus Sentinel data.</li>
+              <li><strong>Terrain:</strong> <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener noreferrer">AWS Terrain Tiles</a>.</li>
+              <li><strong>Place search:</strong> <a href="https://nominatim.org/" target="_blank" rel="noopener noreferrer">Nominatim</a>.</li>
+              <li><strong>Road directions:</strong> <a href="https://project-osrm.org/" target="_blank" rel="noopener noreferrer">OSRM by FOSSGIS</a>.</li>
+            </ul></article>
+            <article class="settings-card"><h4>Forecasts and photos</h4><ul class="service-list">
+              <li><strong>Weather and elevation:</strong> <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>, CC BY 4.0; free API use is non-commercial.</li>
+              <li><strong>Place photos:</strong> <a href="https://www.wikipedia.org/" target="_blank" rel="noopener noreferrer">Wikipedia</a> and <a href="https://commons.wikimedia.org/" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>. Each itinerary photo links to its file page and licence.</li>
+            </ul></article>
+            <details class="advanced settings-provider-card"><summary>Advanced provider URLs</summary>
+              <p class="hint">Provider URLs use public services by default. Enter complete HTTPS endpoints, or HTTP for localhost or 127.0.0.1, without credentials, query or fragment.</p>
+              <div id="providerFields" class="provider-fields"></div>
+            </details>
+          </section>
+          <section data-settings-content="about" hidden><h3>About My Trip Planner</h3><article class="settings-card"><p>© 2026 <a href="https://github.com/tara-assistant/workshop-public/tree/main/tools/trip-planner" target="_blank" rel="noopener noreferrer">MetaEngineers Hub</a>.</p></article></section>
+        </div>
+      </div>
+      <p class="error settings-error" id="providerError" role="alert" hidden></p>
+      <footer class="settings-footer"><p class="settings-foot-note">Changes are saved in this browser only.</p><div class="settings-footer-actions">
+        <button class="btn settings-reset" type="button" id="resetProviders">Reset to defaults</button>
+        <button class="btn" type="button" id="settingsCancel">Cancel</button>
+        <button class="btn btn-primary" type="submit" value="save">Save settings</button>
+      </div></footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

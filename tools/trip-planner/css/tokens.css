@@ -1,0 +1,20 @@
+/* Shared project tokens for the Sardegna trip guide. */
+:root {
+  --paper:#f2f1e9; --panel:#fffefa; --ink:#273431; --muted:#536159;
+  --leaf:#32745f; --ok-bg:#e9f2eb; --line:#e3e2d9;
+  --warn:#934832; --warn-bg:#faeee7; --focus:#256d59;
+  --phase-1:#225b71; --phase-2:#7a4d81; --phase-3:#ae5b37;
+  --phase-4:#41765d; --phase-5:#9a752b; --phase-6:#287c78;
+  --phase-7:#a54f62; --phase-8:#5d687a;
+  --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-head:Georgia,"Times New Roman",serif;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s20:20px; --s5:24px; --s6:32px;
+  --r-sm:10px; --r-md:16px; --r-lg:22px; --r-pill:999px;
+  --tap:44px; --gutter:20px; --map-height:250px;
+  --shadow:0 16px 34px rgba(43,57,47,.075),0 2px 7px rgba(43,57,47,.035);
+  --title-size:29px; --title-line:35px; --day-size:18px; --day-line:24px;
+  --stop-size:16px; --stop-line:22px; --body-size:14px; --body-line:20px;
+  --meta-size:13px; --meta-line:18px; --chip-size:12px; --chip-line:16px;
+  --motion:180ms;
+}
+@media(max-width:340px){:root{--gutter:16px;--title-size:24px;--title-line:30px;--map-height:250px}}

@@ -22,7 +22,8 @@ jobs:
           python-version: '3.12'
       - name: Test public input boundaries and hosting headers
         run: node --test tools/app-hub/release-inputs.test.mjs tools/app-hub/build-pages.test.mjs
-      - name: Test visitor-key bundle transformation
-        run: python -B tools/trip-planner/test_build_bundle.py
+      - name: Test Trip Planner
+        working-directory: tools/trip-planner
+        run: node --test
       - name: Build and verify the deployment allowlist
         run: node tools/app-hub/build-pages.mjs

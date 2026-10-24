@@ -28,11 +28,11 @@ Run from this repository root:
 
 ```sh
 node --test tools/app-hub/release-inputs.test.mjs tools/app-hub/build-pages.test.mjs
-python -B tools/trip-planner/test_build_bundle.py
+(cd tools/trip-planner && node --test)
 node tools/app-hub/build-pages.mjs
 ```
 
-The Pages entry point builds a new `dist/` with exactly the public catalog's allowed browser files, pinned shared UI assets, and generated `_headers`. The current catalog produces 21 deployment files. It rejects existing output, links, unsafe paths, and common credential patterns. Public builds never read private source.
+The Pages entry point builds a new `dist/` with exactly the public catalog's allowed browser files, pinned shared UI assets, and generated `_headers`. The current catalog produces 32 deployment files: 31 allowlisted content/asset files and `_headers`. It rejects existing output, links, unsafe paths, and common credential patterns. Public builds never read private source.
 
 For offline browser checks, build a content-only candidate first:
 
@@ -41,7 +41,7 @@ node tools/app-hub/build.mjs --out tools/app-hub/staging/<fresh-name>
 node tools/app-hub/check-public.mjs tools/app-hub/staging/<fresh-name>
 ```
 
-Set `PLAYWRIGHT_MODULE` only when needed. These checks cover the exact 20-file content allowlist, shared profile/redirect, inline favicon, safe new-tab app/work/docs/social links, local section anchors, absence of private addresses/navigation, and controls at 320/375/1280 pixels. Trip Planner and Snake Arcade are working browser tools; Field Atlas remains a prototype with synthetic data. The checker saves fresh screenshots, including home views at 375×812 and 1280×900, and prints their paths. These checks do not verify live hosting headers, login, or real Telegram clients. Ignored candidates and temporary screenshots can be retained for operator review.
+Set `PLAYWRIGHT_MODULE` only when needed. These checks cover the exact 31-file content allowlist, shared profile/redirect, inline favicon, safe new-tab app/work/docs/social links, local section anchors, both downloadable trip samples and photo metadata, absence of private addresses/navigation, and controls at 320/375/1280 pixels. Trip Planner and Snake Arcade are working browser tools; Field Atlas remains a prototype with synthetic data. The checker saves fresh screenshots, including home views at 375×812 and 1280×900, and prints their paths. These checks do not verify live hosting headers, login, or real Telegram clients. Ignored candidates and temporary screenshots can be retained for operator review.
 
 ## Shared UI and privacy
 
@@ -51,7 +51,7 @@ Only the four exact pinned shared asset URLs receive `Access-Control-Allow-Origi
 
 ## Releases and hosting
 
-Public changes follow feature branches, checked and reviewed pull requests, and approved merges. GitHub checks validate the input boundary, visitor-key transformation, headers, and complete bundle allowlist. Publishing source to a review branch is not a production deployment.
+Public changes follow feature branches, checked and reviewed pull requests, and approved merges. GitHub checks validate the public input boundary, Trip Planner modules and sample-photo contract, hosting headers, and the complete bundle allowlist. Publishing source to a review branch is not a production deployment.
 
 The `workshop-public` Pages project serves the public custom domain and is connected to `tara-assistant/workshop-public`, with production branch `main`, build command `node tools/app-hub/build-pages.mjs`, and output `dist`. Automatic production deployments are enabled for `main`, and preview deployments are disabled. Commit `c6f569a` on `main` was built by a manual production deployment (trigger type ad hoc) and verified live. After each merge, check the deployment list: if no `github:push` production deployment appears, trigger a production build of `main` by hand and verify the live page.
 
