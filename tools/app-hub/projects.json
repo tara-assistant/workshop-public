@@ -6,8 +6,8 @@
       "title": "Trip Planner",
       "icon": "⌖",
       "category": "Maps · itineraries",
-      "description": "Plan multi-day trips on an open 3D map with routes, weather and checklists. Edit by hand or let your own agent do it.",
-      "privacy": "No account and no API key. Trips stay in this browser. Map, route and weather requests go directly from your browser to OpenFreeMap, OpenStreetMap services and Open-Meteo.",
+      "description": "Plan multi-day trips on an open 3D map with routes, automatic weather, packing lists and credited day photos. Edit by hand or import a sourced JSON itinerary. Includes Sardegna and a photo-rich Lisbon, Sintra and Porto demo.",
+      "privacy": "No account or API key. Trips stay in this browser. Map, place, route and weather requests go directly to public providers. Photo lookup sends stop coordinates to Wikipedia and Wikimedia Commons; images show linked author, licence and source.",
       "status": "Live",
       "sourceRoot": "tools/trip-planner",
       "files": [
@@ -27,7 +27,8 @@
         "js/util.js",
         "schema/trip.schema.json",
         "schema/validate.mjs",
-        "samples/sardegna.json"
+        "samples/sardegna.json",
+        "samples/portugal-6-day-demo.json"
       ]
     },
     {

@@ -16,7 +16,7 @@ const candidateRoot = resolve(process.cwd(), candidateArg);
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
 const uiAssets = await sharedUiAssets(repositoryRoot, projectDir);
 const expectedFiles = [...validatePublicCatalog(catalog, repositoryRoot, projectDir), ...uiAssets.map(asset => asset.path)].sort();
-assert.equal(expectedFiles.length, 30, 'Public content allowlist must remain exactly 30 files.');
+assert.equal(expectedFiles.length, 31, 'Public content allowlist must remain exactly 31 files.');
 const privateBoundary = /private[.-]projects\.|private[- ]apps|PRIVATE_PROJECTS:|No private apps yet|private-apps\.json|private-hub\.html|private-app-hub\.css|catalog\.json/i;
 for (const name of ['index.html', 'tara.html', ...uiAssets.map(asset => `assets/${asset.name}`)]) {
   assert.doesNotMatch((await readSafe(repositoryRoot, resolve(projectDir, name))).toString('utf8'), privateBoundary, `Private address or navigation in public source: ${name}`);
@@ -184,18 +184,33 @@ try {
     const height = width === 1280 ? 900 : 812;
     await tripPage.setViewportSize({ width, height });
     await tripPage.goto('https://public.audit.invalid/trip-planner/');
-    for (const [modalId, open, field] of [['libraryDlg', ['menuBtn', 'libraryBtn'], 'newTripBtn'], ['newTripDlg', ['menuBtn', 'libraryBtn', 'newTripBtn'], 'ntTitle']]) {
-      const modal = tripPage.locator(`#${modalId}`);
-      for (const trigger of open) await tripPage.locator(`#${trigger}`).click();
-      await modal.waitFor({ state: 'visible' });
-      const bounds = await modal.boundingBox();
-      assert(bounds && bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= width + 1 && bounds.y + bounds.height <= height + 1, `${modalId} escaped ${width}x${height}.`);
-      assert(await tripPage.locator(`#${field}`).isVisible(), `${modalId} content is not visible at ${width}px.`);
-      await tripPage.keyboard.press('Escape');
-      await tripPage.keyboard.press('Escape');
-      await modal.waitFor({ state: 'hidden' });
-    }
-    report.interactions.push(`Trip Planner My trips and New trip dialogs open, close, and stay within ${width}x${height}.`);
+    const examples = await tripPage.evaluate(async () => Promise.all(['sardegna.json', 'portugal-6-day-demo.json'].map(async name => {
+      const response = await fetch(`/trip-planner/samples/${name}`);
+      return { name, status: response.status, trip: await response.json() };
+    })));
+    assert.deepEqual(examples.map(example => [example.name, example.status]), [['sardegna.json', 200], ['portugal-6-day-demo.json', 200]]);
+    const portugalDays = examples[1].trip.phases.flatMap(phase => phase.days);
+    assert.equal(portugalDays.length, 6);
+    assert(portugalDays.every(day => day.photoUrl?.startsWith('https://thumb.wikimedia.org/') && day.photoCredit && day.photoSourceUrl?.startsWith('https://commons.wikimedia.org/wiki/File:') && day.photoLicenseUrl?.startsWith('https://creativecommons.org/licenses/')));
+    if (width === 320) report.interactions.push('The public bundle serves both JSON samples; all six Portugal days have Wikimedia thumbnails and linked attribution metadata.');
+    await tripPage.locator('#menuBtn').click();
+    const menu = tripPage.locator('#tripMenuDlg');
+    await menu.waitFor({ state: 'visible' });
+    const menuBounds = await menu.boundingBox();
+    assert(menuBounds && menuBounds.x >= 0 && menuBounds.y >= 0 && menuBounds.x + menuBounds.width <= width + 1 && menuBounds.y + menuBounds.height <= height + 1, `Menu escaped ${width}x${height}.`);
+    await tripPage.locator('#libraryBtn').click();
+    const libraryPage = tripPage.locator('#tripMenuDlg [data-trip-page="library"]');
+    await libraryPage.waitFor({ state: 'visible' });
+    assert(await tripPage.locator('#importBtn').isVisible(), `My trips import controls are not visible at ${width}px.`);
+    await tripPage.locator('#newTripBtn').click();
+    const newTripPage = tripPage.locator('#tripMenuDlg [data-trip-page="new-trip"]');
+    await newTripPage.waitFor({ state: 'visible' });
+    assert(await tripPage.locator('#ntTitle').isVisible(), `New trip fields are not visible at ${width}px.`);
+    const newTripBounds = await menu.boundingBox();
+    assert(newTripBounds && newTripBounds.x >= 0 && newTripBounds.y >= 0 && newTripBounds.x + newTripBounds.width <= width + 1 && newTripBounds.y + newTripBounds.height <= height + 1, `New trip page escaped ${width}x${height}.`);
+    await tripPage.keyboard.press('Escape');
+    await menu.waitFor({ state: 'hidden' });
+    report.interactions.push(`Trip Planner My trips and New trip subpages open in the shared Menu and fit ${width}x${height}.`);
   }
   await tripPage.close();
   for (const mode of ['ordinary', 'sdk-only', 'launch']) {

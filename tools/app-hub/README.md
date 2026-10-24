@@ -10,7 +10,7 @@ This is the canonical public App Hub and shared presentation source: an experime
 - `assets/app-cards.mjs`, `app-cards.css`, `app-hub.css`, and `app-hub-nav.css`: canonical shared source.
 - `tools/trip-planner/`, `diagnostics/field-atlas/`, and `games/snake/`: public app roots relative to the repository.
 
-Trip Planner is a plain static app with no build step and no API key, so it is copied byte for byte from its allowlist. Public builders never read private catalogs or app source.
+Trip Planner is a plain static app with no build step and no API key, so it is copied byte for byte from its allowlist. The allowlist deploys the Sardegna preset and Portugal demo JSON at `/trip-planner/samples/`; the Portugal example remains a separate import, not a preset. Public builders never read private catalogs or app source.
 
 ## Build and checks
 
@@ -18,11 +18,11 @@ From the public repository root:
 
 ```sh
 node --test tools/app-hub/release-inputs.test.mjs tools/app-hub/build-pages.test.mjs
-node --test tools/trip-planner/schema/validate.test.mjs
+(cd tools/trip-planner && node --test)
 node tools/app-hub/build-pages.mjs
 ```
 
-`build-pages.mjs` wraps the guarded content builder and emits a fresh `dist/`. The current allowlist contains 26 content files plus generated `_headers`. The final output is checked against that exact set; it is never the source checkout. The wrapper gives only the four exact content-hashed shared assets anonymous all-origin CORS (`Access-Control-Allow-Origin: *`), correct CSS/module MIME types, immutable caching, and nosniff headers. These public assets can serve production and protected private preview hosts without sending credentials. No wildcard route, credential allowance, catalog CORS, or Access policy change is added. The manifest is served with revalidation.
+`build-pages.mjs` wraps the guarded content builder and emits a fresh `dist/`. The checked Pages bundle contains 31 allowlisted content and hashed-asset files plus generated `_headers` (32 files total). The final output is checked against that exact set; it is never the source checkout. The wrapper gives only the four exact content-hashed shared assets anonymous all-origin CORS (`Access-Control-Allow-Origin: *`), correct CSS/module MIME types, immutable caching, and nosniff headers. These public assets can serve production and protected private preview hosts without sending credentials. No wildcard route, credential allowance, catalog CORS, or Access policy change is added. The manifest is served with revalidation.
 
 To verify interface content offline:
 
@@ -31,7 +31,7 @@ node tools/app-hub/build.mjs --out tools/app-hub/staging/<fresh-name>
 node tools/app-hub/check-public.mjs tools/app-hub/staging/<fresh-name>
 ```
 
-The content checker expects the content-only 29-file candidate, not the Pages control file. It checks 320, 375, and 1280 pixel layouts, routes, accessible controls, matching cards, the shared profile, absence of private addresses/navigation in source and output, Trip Planner My trips and New trip dialogs, and simulated Field Atlas map controls. DOM assertions require all fourteen visible Live, Repo, work/docs and social links to use `_blank` with `noopener noreferrer`; section anchors stay local. Ordinary and SDK-only modes also exercise tabs with no opener. The inline SVG workshop favicon decodes without adding a file to the allowlist. `/tara/` redirects with JavaScript enabled or disabled. Full-page screenshots plus 375×812 and 1280×900 home viewport screenshots are saved in a fresh temporary directory printed by the checker. Set `PLAYWRIGHT_MODULE` to a Node Playwright install if needed. Offline simulation does not prove live providers, headers, login, or actual Telegram clients. Candidate and screenshot artifacts can be retained for operator review; staging is ignored.
+The content checker expects the 31-file candidate without the Pages control file. It checks 320, 375, and 1280 pixel layouts, routes, accessible controls, matching cards, the shared profile, absence of private addresses/navigation in source and output, both downloadable trip samples and their photo credits, Trip Planner My trips and New trip subpages inside the shared Menu, and simulated Field Atlas map controls. DOM assertions require all fourteen visible Live, Repo, work/docs and social links to use `_blank` with `noopener noreferrer`; section anchors stay local. Ordinary and SDK-only modes also exercise tabs with no opener. The inline SVG workshop favicon decodes without adding a file to the allowlist. `/tara/` redirects with JavaScript enabled or disabled. Full-page screenshots plus 375×812 and 1280×900 home viewport screenshots are saved in a fresh temporary directory printed by the checker. Set `PLAYWRIGHT_MODULE` to a Node Playwright install if needed. Offline simulation does not prove live providers, headers, login, or actual Telegram clients. Candidate and screenshot artifacts can be retained for operator review; staging is ignored.
 
 ## Private consumption and pin updates
 
@@ -43,6 +43,6 @@ The public home has no private entry, address, hidden link, or conditional redir
 
 ## Current hosting
 
-The `workshop-public` Cloudflare Pages project is connected to `tara-assistant/workshop-public`, with production branch `main`, build command `node tools/app-hub/build-pages.mjs`, and output directory `dist`. Automatic production deployments are enabled for `main`, and preview deployments are disabled. The public custom-domain root and `/tara/` route were verified live after production commit `590d595`, which was published by Direct Upload. The Git-triggered deployment path remains unverified, so the enabled setting is not evidence that a Git push deploys successfully.
+The `workshop-public` Cloudflare Pages project is connected to `tara-assistant/workshop-public`, with production branch `main`, build command `node tools/app-hub/build-pages.mjs`, and output directory `dist`. Automatic production deployments are enabled for `main`, and preview deployments are disabled. The public custom-domain root and `/tara/` route were verified live after production commit `590d595`, which was published by Direct Upload. After every reviewed merge, verify that a Cloudflare Pages production deployment matches the merged commit and that the live site serves the expected files. If no matching `github:push` deployment appears, use the saved deployment helper for the approved production branch and verify the live result.
 
 Public source changes use checked and reviewed pull requests followed by approved merges. Original work is copyright © 2026 Jihad Karaki; third-party notices remain separate.

@@ -12,9 +12,3 @@
 /dist/
 /dist-*/
 /tools/app-hub/staging/
-
-# Local-only testing for Trip Planner: skill trials, browser scripts, screenshots, scratch servers.
-# These are for the maintainers and never ship. Committed unit tests live beside the code they test.
-/tools/trip-planner/tests/local/
-/tools/trip-planner/_*
-/tools/trip-planner/skill/trials/

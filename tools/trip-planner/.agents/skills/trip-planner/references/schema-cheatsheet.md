@@ -2,7 +2,7 @@
 
 Authority: `schema/trip.schema.json`, checked 2026-10-14. `validateTrip(trip, schema)` returns an array of errors. `lintTrip(trip)` returns warnings for repeated day numbers, repeated stop ids and 0,0 pins. Check unique phase ids separately. Unknown fields are accepted by the validator, but these documented fields are the portable contract.
 
-`*` means required. All other fields may be omitted, not set to `null`. Length limits are characters. Prefer HTTPS even though the schema accepts HTTP. Dates are real calendar dates in `YYYY-MM-DD` form.
+`*` means required. All other fields may be omitted, not set to `null`. Length limits are characters. Prefer HTTPS even though the schema accepts HTTP. Dates are real calendar dates in `YYYY-MM-DD` form. Generated trips require confirmed root and per-day dates; only explicitly requested illustrative demos may use disclosed example dates, with both title and note clearly labelling the demo as unconfirmed.
 
 | Object | Fields | Type and allowed values |
 | --- | --- | --- |
@@ -23,7 +23,8 @@ Authority: `schema/trip.schema.json`, checked 2026-10-14. `validateTrip(trip, sc
 | Day | `date` | ISO date string |
 | Day | `mode` | `walking`, `cycling`, `driving`; describe boats and lifts in tips |
 | Day | `stops`* | Array of stop objects, at most 60; populate useful stops |
-| Day | `photoUrl`, `photoCredit` | URL string; credit string max 200, author and licence |
+| Day | `photoUrl`, `photoCredit` | HTTPS image URL; credit string max 200, formatted as author · licence name |
+| Day | `photoSourceUrl`, `photoLicenseUrl` | HTTPS Commons file-page URL and exact licence-page URL; use both for a verified day photo |
 | Day | `tips`, `packing` | Arrays of strings; each max 600, 160 respectively |
 | Day | `food` | String, max 600 |
 | Day | `bookings` | Array of booking objects |
@@ -35,8 +36,9 @@ Authority: `schema/trip.schema.json`, checked 2026-10-14. `validateTrip(trip, sc
 | Stop | `desc` | String, max 1200; include verification limits |
 | Stop | `tags` | Array of strings, each max 40 |
 | Stop | `links` | Array of link objects |
-| Stop | `imageUrl`, `imageCredit` | URL string; credit string max 200, author and licence |
-| Stop | `track` | Array, max 20000 points; each an array of 2 or 3 numbers. Schema does not specify coordinate order, units or CRS. Omit unless producer and app conventions are confirmed; never infer a trail from routing |
+| Stop | `imageUrl`, `imageCredit` | HTTPS image URL; credit string max 200, author and licence name |
+| Stop | photo source/licence | No dedicated fields; include Commons file-page and licence URLs as `links` of kind `web` |
+| Stop | `track` | Array, max 20000 points; each `[longitude, latitude]` or `[longitude, latitude, elevation]`. Longitude [-180, 180], latitude [-90, 90]. Follow the app's order; include only a real, verified track and never infer one from routing |
 | Stop | `source`, `verified` | String max 400; ISO date of actual check |
 | Stop | `visited` | Boolean; omit or use `false` for a new plan |
 | Link | `url`* | URL string |
@@ -48,6 +50,6 @@ Authority: `schema/trip.schema.json`, checked 2026-10-14. `validateTrip(trip, sc
 | Shared | URL | String starting `http://` or `https://`, max 2000. Skill photos must use HTTPS |
 | Shared | Color | String matching `#RRGGBB`, hex digits only |
 
-The schema allows empty day and stop arrays, empty booking labels and optional weather fields. A useful itinerary should avoid empty days, empty labels and weather without a stated kind or source. No native fields exist for route legs, difficulty, elevation gain, opening hours, admission prices or weather provenance. Put sourced details in `desc`, `source`, `links` and `tips`, within their limits. A `verified` date certifies only the checks described alongside it.
+The schema allows empty day and stop arrays, empty booking labels and optional weather fields. A useful itinerary should avoid empty days, empty labels and weather without a stated kind or source. No native fields exist for route legs, difficulty, elevation gain, opening hours, admission prices or weather provenance. Put practical visitor advice in `desc` and `tips`, within their limits. Keep all sources, research dates and provenance in `source` and `links` metadata. A `verified` date certifies only the checks described alongside it.
 
-Photo candidates do not change schema v1. Save `imageUrl` and `imageCredit` on the stop. Preserve the checked source page as a web link when attribution requires it.
+For a day photo, set `photoUrl`, `photoCredit` (`author · licence name`), `photoSourceUrl` and `photoLicenseUrl` so the app can display linked credits. For a stop image, set `imageUrl` and `imageCredit`, and preserve both source and licence pages as web links because stop photos have no dedicated source/licence fields.

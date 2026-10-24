@@ -6,10 +6,27 @@ import { validateTrip, lintTrip } from './validate.mjs';
 const read = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
 const schema = read('./trip.schema.json');
 const sardegna = () => read('../samples/sardegna.json');
+const portugal = () => read('../samples/portugal-6-day-demo.json');
 
 test('Sardegna preset is valid', () => {
   assert.deepEqual(validateTrip(sardegna(), schema), []);
   assert.deepEqual(lintTrip(sardegna()), []);
+});
+
+test('Portugal illustrative demo is valid and has credited Commons photos on every day', () => {
+  const trip = portugal();
+  assert.deepEqual(validateTrip(trip, schema), []);
+  assert.deepEqual(lintTrip(trip), []);
+  assert.equal(trip.title.includes('Illustrative demo; not a confirmed travel plan'), true);
+  assert.equal(trip.note.includes('Illustrative demo; not a confirmed travel plan'), true);
+  const days = trip.phases.flatMap((phase) => phase.days);
+  assert.equal(days.length, 6);
+  for (const day of days) {
+    assert.match(day.photoUrl, /^https:\/\/thumb\.wikimedia\.org\/wikipedia\/commons\/thumb\//);
+    assert.match(day.photoCredit, /^.+ · CC BY(?:-SA)? \d\.\d$/);
+    assert.match(day.photoSourceUrl, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
+    assert.match(day.photoLicenseUrl, /^https:\/\/creativecommons\.org\/licenses\/by(?:-sa)?\/\d\.\d$/);
+  }
 });
 
 test('missing required field is reported with a path', () => {

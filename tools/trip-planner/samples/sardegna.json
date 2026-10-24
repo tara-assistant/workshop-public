@@ -6,10 +6,10 @@
   "startDate": "2026-06-05",
   "endDate": "2026-06-15",
   "summary": "12 day plans over 11 dates, in three bases: the wild east coast, the northeast islands and Cagliari with its southern beaches.",
-  "note": "This plan was tested and done by Jihad for his summer trip.",
+  "note": "Sample itinerary for exploration; confirm current access and bookings before travelling.",
   "center": [9.2, 39.8],
   "zoom": 7,
-  "theme": { "phases": ["#1B4965", "#7B2D8E", "#B44215"] },
+  "theme": { "phases": ["#225B71", "#7A4D81", "#AE5B37"] },
   "phases": [
     {
       "id": "p1",
@@ -21,6 +21,10 @@
           "dayNumber": 1,
           "date": "2026-06-05",
           "title": "Arrival and Arbatax sunset",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Sardinia_Arbatax_Rocce_rosse-1464.jpg/1280px-Sardinia_Arbatax_Rocce_rosse-1464.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Isiwal · CC BY-SA 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Sardinia_Arbatax_Rocce_rosse-1464.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
           "mode": "driving",
           "stops": [
             { "id": "1a", "name": "Hotel Orri: check in", "type": "lodging", "time": "16:00", "dwell": 30, "lat": 39.9252, "lon": 9.6663, "tags": [], "desc": "Drop bags, head out. Rooftop bar for sunset.", "links": [{ "kind": "web", "label": "Website", "url": "http://www.hotelorri.it/" }], "visited": false },
@@ -36,6 +40,10 @@
           "dayNumber": 2,
           "date": "2026-06-06",
           "title": "Pedra Longa and Selvaggio Blu hike",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Pedra_Longa_-_panoramio.jpg/1280px-Pedra_Longa_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Telain · CC BY 3.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Pedra_Longa_-_panoramio.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by/3.0/",
           "mode": "driving",
           "stops": [
             { "id": "2a", "name": "Pedra Longa", "type": "gem", "time": "08:00", "dwell": 30, "lat": 40.0277, "lon": 9.7071, "tags": ["swim", "gem"], "desc": "30 min. 128 m sea stack. Swim or snorkel at the base. Cliff jumping. Restaurant at the top.", "links": [], "visited": false },
@@ -51,6 +59,10 @@
           "dayNumber": 3,
           "date": "2026-06-07",
           "title": "Boat cruise: Goloritzé, Mariolu and more",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Cala_Goloritz%C3%A9_%28arco%29.jpg/1280px-Cala_Goloritz%C3%A9_%28arco%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Sara Pizzagalli · CC BY-SA 2.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Cala_Goloritz%C3%A9_(arco).jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
           "mode": "driving",
           "stops": [
             { "id": "3a", "name": "Santa Maria Navarrese port", "type": "boat", "time": "08:30", "dwell": 30, "lat": 39.9883, "lon": 9.6862, "tags": ["book", "boat"], "desc": "Arrive 30 min before. The boat leaves at 9 AM sharp. Max 12 passengers.", "links": [{ "kind": "book", "label": "GetYourGuide", "url": "https://www.getyourguide.com/santa-maria-navarrese-l159484/guided-cruise-to-cala-goloritze-cala-mariolu-cala-gabbiani-and-cala-biriala-t849589/" }], "visited": false },
@@ -71,6 +83,10 @@
           "dayNumber": 4,
           "date": "2026-06-08",
           "title": "Ghost village, then Budoni",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/GairoVecchio.jpg/1280px-GairoVecchio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Mbarrieau · CC BY 3.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:GairoVecchio.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by/3.0/",
           "mode": "driving",
           "stops": [
             { "id": "4a", "name": "Gairo Vecchio", "type": "gem", "time": "07:30", "dwell": 60, "lat": 39.8481, "lon": 9.4989, "tags": ["hike", "gem"], "desc": "45 min south. Ruins and fig trees, abandoned in 1951. SS198 from Gairo Sant'Elena. Free. Check safe public access to the ruins.", "links": [], "visited": false },
@@ -94,6 +110,10 @@
           "dayNumber": 5,
           "date": "2026-06-08",
           "title": "La Cinta beach (afternoon)",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/82/La_Cinta_-_panoramio_%281%29.jpg/1280px-La_Cinta_-_panoramio_%281%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "trolvag · CC BY-SA 3.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:La_Cinta_-_panoramio_(1).jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
           "mode": "driving",
           "stops": [
             { "id": "5a", "name": "La Cinta Beach", "type": "swim", "time": "16:00", "dwell": 150, "lat": 40.7852, "lon": 9.671, "tags": ["swim"], "desc": "15 min. Huge white sand beach. Walk south. €1.50 per hour parking.", "links": [], "visited": false }
@@ -107,6 +127,10 @@
           "dayNumber": 6,
           "date": "2026-06-09",
           "title": "Hidden beaches and Tavolara views",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/15/Scogliere_rosa_a_Capo_Coda_Cavallo.jpg/1280px-Scogliere_rosa_a_Capo_Coda_Cavallo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Shardan · CC BY-SA 3.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Scogliere_rosa_a_Capo_Coda_Cavallo.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
           "mode": "driving",
           "stops": [
             { "id": "6a", "name": "Spiaggia delle Vacche", "type": "swim", "time": "08:00", "dwell": 150, "lat": 40.8583, "lon": 9.6735, "tags": ["swim", "hike", "gem"], "desc": "Rough road. Go before 10 AM. Hidden coves past the main beach. No facilities.", "links": [], "visited": false },
@@ -122,6 +146,10 @@
           "dayNumber": 7,
           "date": "2026-06-10",
           "title": "La Maddalena archipelago",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Spiaggia_rosa%2C_isola_di_budelli%2C_sardegna.jpg/1280px-Spiaggia_rosa%2C_isola_di_budelli%2C_sardegna.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "trevis_lu (Luca Giudicatti) · CC BY-SA 2.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Spiaggia_rosa,_isola_di_budelli,_sardegna.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
           "mode": "driving",
           "stops": [
             { "id": "7a", "name": "Drive to Palau", "type": "transport", "time": "06:30", "dwell": 100, "lat": 41.1808, "lon": 9.3854, "tags": [], "desc": "1 h 40. Leave early. Port parking about €10.", "links": [], "visited": false },
@@ -149,6 +177,10 @@
           "dayNumber": 8,
           "date": "2026-06-11",
           "title": "City: Castello, market and Poetto",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Cagliari%2C_veduta_da_castello%2C_verso_ovest.jpg/1280px-Cagliari%2C_veduta_da_castello%2C_verso_ovest.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Sailko · CC BY-SA 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Cagliari,_veduta_da_castello,_verso_ovest.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
           "mode": "walking",
           "stops": [
             { "id": "8a", "name": "Castello Quarter", "type": "sight", "time": "10:00", "dwell": 90, "lat": 39.2187, "lon": 9.1169, "tags": ["culture"], "desc": "Medieval heart. Cathedral (free, with crypt). Torre dell'Elefante €3. Wander without rushing.", "links": [], "visited": false },
@@ -166,6 +198,10 @@
           "dayNumber": 9,
           "date": "2026-06-12",
           "title": "South: Nora, Tuerredda and Cipolla",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/25/Archaeological_site_Nora_-_Pula_-_Sardinia_-_Italy_-_06.jpg/1280px-Archaeological_site_Nora_-_Pula_-_Sardinia_-_Italy_-_06.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Norbert Nagel · CC BY-SA 3.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Archaeological_site_Nora_-_Pula_-_Sardinia_-_Italy_-_06.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
           "mode": "driving",
           "stops": [
             { "id": "9a", "name": "Nora Archaeological Park", "type": "sight", "time": "08:30", "dwell": 60, "lat": 38.9862, "lon": 9.0161, "tags": ["culture"], "desc": "45 min. Phoenician and Roman headland. Mosaics. €10, guided, 1 h.", "links": [{ "kind": "web", "label": "Info", "url": "https://www.fondazionepulacultura.it/" }], "visited": false },
@@ -181,6 +217,10 @@
           "dayNumber": 10,
           "date": "2026-06-13",
           "title": "West: Nebida and Porto Pino",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Masua_e_Pan_di_Zucchero.jpg/1280px-Masua_e_Pan_di_Zucchero.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Raffaele Pagani · CC BY-SA 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Masua_e_Pan_di_Zucchero.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
           "mode": "driving",
           "stops": [
             { "id": "10a", "name": "Nebida to Masua hike", "type": "hike", "time": "08:00", "dwell": 90, "lat": 39.3283, "lon": 8.4175, "tags": ["hike"], "desc": "1 h 15 west. Cliff trail, Pan di Zucchero 133 m stack, mining ruins. About 1.5 h.", "links": [{ "kind": "hike", "label": "Komoot", "url": "https://www.komoot.com/highlight/915827" }], "visited": false },
@@ -196,6 +236,10 @@
           "dayNumber": 11,
           "date": "2026-06-14",
           "title": "East: Sinzias, Porto Giunco and boat tour",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/Capo_Carbonara_-_Porto_Giunco.jpg/1280px-Capo_Carbonara_-_Porto_Giunco.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Alistair Young · CC BY 2.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Capo_Carbonara_-_Porto_Giunco.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by/2.0/",
           "mode": "driving",
           "stops": [
             { "id": "11a", "name": "Cala Sinzias", "type": "swim", "time": "08:30", "dwell": 90, "lat": 39.1929, "lon": 9.563, "tags": ["swim"], "desc": "1 h east. Spacious, crystal-clear water. €10 parking.", "links": [], "visited": false },
@@ -212,6 +256,10 @@
           "dayNumber": 12,
           "date": "2026-06-15",
           "title": "Departure",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/Cagliari%2C_Sardinia%2C_Italy_-_54703354143.jpg/1280px-Cagliari%2C_Sardinia%2C_Italy_-_54703354143.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Bella MIao · CC BY-SA 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Cagliari,_Sardinia,_Italy_-_54703354143.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
           "mode": "driving",
           "stops": [
             { "id": "12a", "name": "Final morning", "type": "swim", "dwell": 90, "lat": 39.2515, "lon": 9.0543, "tags": [], "desc": "Poetto swim or Calamosca (10 min, popular with locals). Airport 15 min.", "links": [], "visited": false }

@@ -1,10 +1,13 @@
 // Small helpers. No user text is ever turned into HTML: build nodes with h().
 
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+const SVG_TAGS = new Set(['svg', 'path', 'circle']);
+
 export function h(tag, props, ...kids) {
-  const el = document.createElement(tag);
+  const el = SVG_TAGS.has(tag) ? document.createElementNS(SVG_NAMESPACE, tag) : document.createElement(tag);
   for (const [key, value] of Object.entries(props || {})) {
     if (value == null || value === false) continue;
-    if (key === 'class') el.className = value;
+    if (key === 'class') el.setAttribute('class', value);
     else if (key === 'text') el.textContent = value;
     else if (key === 'dataset') Object.assign(el.dataset, value);
     else if (key.startsWith('on') && typeof value === 'function') el.addEventListener(key.slice(2).toLowerCase(), value);
@@ -64,14 +67,6 @@ export function fmtRange(start, end) {
   const b = end && end !== start ? fmtDay(end, false) : '';
   const year = start.slice(0, 4);
   return b ? `${a} to ${b} ${year}` : `${a} ${year}`;
-}
-
-export function debounce(fn, ms) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
-  };
 }
 
 export const TYPE_LABEL = {

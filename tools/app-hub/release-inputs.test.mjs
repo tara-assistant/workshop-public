@@ -10,15 +10,20 @@ import { publicCards, scan, sharedUiAssets, sharedUiSources, validatePublicCatal
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(projectDir, '../..');
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
-// 18 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder.
-test('catalog allowlist has 26 fixed public release files and uses category source roots', () => {
+// 23 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder.
+test('catalog allowlist has 27 fixed public release files and uses category source roots', () => {
   const files = [...validatePublicCatalog(catalog, repositoryRoot, projectDir)];
-  assert.equal(files.length, 26);
+  assert.equal(files.length, 27);
   assert(!files.some(file => /private|projects\.json/.test(file)));
   assert.deepEqual(catalog.projects.map(item => item.sourceRoot), [
     'tools/trip-planner',
     'diagnostics/field-atlas',
     'games/snake'
+  ]);
+  const tripPlanner = catalog.projects.find(item => item.slug === 'trip-planner');
+  assert.deepEqual(tripPlanner.files.filter(file => file.startsWith('samples/')).sort(), [
+    'samples/portugal-6-day-demo.json',
+    'samples/sardegna.json'
   ]);
   assert(catalog.projects.every(item => !Object.hasOwn(item, 'build')));
 });

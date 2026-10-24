@@ -1,13 +1,8 @@
-// MapLibre map. Keyless: OpenFreeMap vector tiles, OpenTopoMap and EOX Sentinel-2 rasters, AWS terrain.
+// MapLibre map. Keyless: OpenFreeMap vector maps and optional satellite/terrain overlays.
 import { h } from './util.js';
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 
 const RASTERS = {
-  topo: {
-    tiles: ['https://a.tile.opentopomap.org/{z}/{x}/{y}.png', 'https://b.tile.opentopomap.org/{z}/{x}/{y}.png', 'https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],
-    tileSize: 256, maxzoom: 17,
-    attribution: '© <a href="https://opentopomap.org/">OpenTopoMap</a> (CC-BY-SA), © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  },
   sat: {
     tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg'],
     tileSize: 256, maxzoom: 18,
@@ -49,13 +44,7 @@ export class MapView {
       attributionControl: false, maxPitch: 75, dragRotate: true
     });
     this.map = map;
-    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
-    // The credits live inside the map as a small info button, closed until tapped.
-    map.once('load', () => {
-      const credits = this.container.querySelector('.maplibregl-ctrl-attrib');
-      credits?.classList.remove('maplibregl-compact-show');
-      credits?.removeAttribute('open');
-    });
+    map.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-left');
     map.on('load', () => this._onLoad());
     map.on('error', (event) => {
       const status = event?.error?.status;
@@ -99,18 +88,17 @@ export class MapView {
   }
 
   setMode(mode) {
-    this.mode = mode;
+    this.mode = mode === 'sat' ? 'sat' : 'map';
     if (this.loaded) this._applyMode();
   }
 
   _applyMode() {
     const map = this.map;
     const vis = (id, on) => map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
-    const raster = this.mode === 'topo' ? 'r-topo' : this.mode === 'sat' ? 'r-sat' : null;
-    vis('r-topo', raster === 'r-topo');
-    vis('r-sat', raster === 'r-sat');
-    this.vectorIds.forEach((id) => vis(id, !raster));
-    this.symbolIds.forEach((id) => vis(id, this.mode !== 'topo'));
+    const satellite = this.mode === 'sat';
+    vis('r-sat', satellite);
+    this.vectorIds.forEach((id) => vis(id, !satellite));
+    this.symbolIds.forEach((id) => vis(id, !satellite));
   }
 
   set3D(on) {
@@ -118,7 +106,7 @@ export class MapView {
     if (!this.loaded) return;
     const map = this.map;
     map.setTerrain(on ? { source: 'dem', exaggeration: 1.3 } : null);
-    map.easeTo({ pitch: on ? 62 : 0, bearing: on ? map.getBearing() : 0, duration: 700 });
+    map.easeTo({ pitch: on ? 62 : 0, bearing: on ? map.getBearing() : 0, duration: 400 });
   }
 
   setData({ items, lines }) {

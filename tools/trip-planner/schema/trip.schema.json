@@ -49,6 +49,8 @@
         "title": { "type": "string", "minLength": 1, "maxLength": 160 },
         "photoUrl": { "$ref": "#/$defs/httpsUrl" },
         "photoCredit": { "type": "string", "maxLength": 200 },
+        "photoSourceUrl": { "$ref": "#/$defs/httpsUrl" },
+        "photoLicenseUrl": { "$ref": "#/$defs/httpsUrl" },
         "mode": { "enum": ["walking", "cycling", "driving"] },
         "stops": { "type": "array", "maxItems": 60, "items": { "$ref": "#/$defs/stop" } },
         "tips": { "type": "array", "items": { "type": "string", "maxLength": 600 } },

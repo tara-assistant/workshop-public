@@ -78,7 +78,6 @@ export async function resetPreset() {
 export const presetPresent = () => !!data.trips[PRESET_ID];
 export const active = () => data.trips[data.activeId];
 export const getTrip = (id) => data.trips[id];
-export const activeMeta = () => data.meta[data.activeId] || {};
 
 export function setActive(id) {
   if (data.trips[id]) {
@@ -166,19 +165,6 @@ export function importTrip(obj, { preset = false } = {}) {
   return { ok: true, id, warnings: lint(obj) };
 }
 
-// Replace a trip with the same id (used when a connected agent saves), or add it.
-export function upsert(obj) {
-  const errors = validate(obj);
-  if (errors.length) return { ok: false, errors };
-  const isNew = !data.trips[obj.id];
-  data.trips[obj.id] = obj;
-  if (isNew) data.order.push(obj.id);
-  data.meta[obj.id] = { ...(data.meta[obj.id] || {}), updatedAt: Date.now() };
-  if (!data.activeId) data.activeId = obj.id;
-  persist();
-  return { ok: true, id: obj.id };
-}
-
 export function createBlank({ title, destination, startDate }) {
   const id = uniqueId(slug(title));
   const trip = {
@@ -231,8 +217,6 @@ export function restoreDeleted() {
   persist();
   return true;
 }
-
-export const isEmpty = () => data.order.length === 0;
 
 export function exportJson(trip = active()) {
   return JSON.stringify(trip, null, 2);

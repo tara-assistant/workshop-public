@@ -1,0 +1,277 @@
+{
+  "schema": 1,
+  "id": "portugal-lisbon-sintra-porto-demo-2027-05",
+  "title": "Portugal: Lisbon, Sintra and Porto (Illustrative demo; not a confirmed travel plan)",
+  "destination": "Portugal",
+  "summary": "A six-day route through Lisbon, Sintra and Porto, with time to check current schedules and availability before travel.",
+  "note": "Illustrative demo; not a confirmed travel plan. Dates 2027-05-11 to 2027-05-16 are chosen only for this example and are not traveller-confirmed. Check venue hours, timed-entry tickets and CP train schedules directly. Visit durations are suggestions, not live route times. Weather is not prefilled.",
+  "startDate": "2027-05-11",
+  "endDate": "2027-05-16",
+  "phases": [
+    {
+      "id": "lisbon-base",
+      "title": "Lisbon",
+      "subtitle": "Three nights, including a Sintra day trip",
+      "colorKey": 1,
+      "days": [
+        {
+          "dayNumber": 1,
+          "date": "2027-05-11",
+          "title": "Castle hill and old Lisbon",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Castelo_de_Sao_Jorge_-_Lisbon_-_01.jpg/960px-Castelo_de_Sao_Jorge_-_Lisbon_-_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "NorbertNagel · CC BY-SA 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Castelo_de_Sao_Jorge_-_Lisbon_-_01.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "mode": "walking",
+          "stops": [
+            {
+              "id": "lisbon-sao-jorge-castle",
+              "name": "Castelo de São Jorge",
+              "type": "sight",
+              "time": "Morning",
+              "dwell": 120,
+              "desc": "Take your time among the castle walls and viewpoints, with broad views over Lisbon. The ramparts involve steps and sloping paths, so enjoy them at a pace that feels comfortable.",
+              "lat": 38.71393,
+              "lon": -9.1335,
+              "tags": ["history", "viewpoint"],
+              "source": "https://www.visitlisboa.com/en/places/castelo-de-sao-jorge",
+              "verified": "2026-10-23",
+              "links": [
+                {"kind": "web", "label": "Visitor information", "url": "https://www.visitlisboa.com/en/places/castelo-de-sao-jorge"},
+                {"kind": "map", "label": "Map reference", "url": "https://mapcarta.com/pt/26239050"}
+              ]
+            }
+          ],
+          "tips": [
+            "Check the castle's current opening days, seasonal hours and holiday closures before you go.",
+            "This is a steep, cobbled part of the city. Leave space for rests and viewpoints."
+          ],
+          "food": "Pause for a nearby café or a relaxed meal in the old town; check current options before you arrive.",
+          "bookings": [
+            {"label": "Check official castle information and tickets", "url": "https://www.castelodesaojorge.pt/"}
+          ],
+          "packing": ["Comfortable shoes for uneven, sloping streets", "Water bottle"]
+        },
+        {
+          "dayNumber": 2,
+          "date": "2027-05-12",
+          "title": "Belém and the Tagus riverfront",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Monasterio_de_los_Jer%C3%B3nimos%2C_Lisboa%2C_Portugal%2C_2022-07-24%2C_DD_44.jpg/960px-Monasterio_de_los_Jer%C3%B3nimos%2C_Lisboa%2C_Portugal%2C_2022-07-24%2C_DD_44.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Diego Delso · CC BY-SA 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Monasterio_de_los_Jer%C3%B3nimos,_Lisboa,_Portugal,_2022-07-24,_DD_44.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "mode": "walking",
+          "stops": [
+            {
+              "id": "lisbon-jeronimos",
+              "name": "Jerónimos Monastery",
+              "type": "sight",
+              "time": "Morning",
+              "dwell": 150,
+              "desc": "Explore the monastery and its celebrated Manueline architecture, then take an unhurried walk around Belém's monumental riverfront.",
+              "lat": 38.69793,
+              "lon": -9.2062,
+              "tags": ["architecture", "unesco"],
+              "source": "https://www.museusemonumentos.pt/en/museus-e-monumentos/jeronimos-monastery",
+              "verified": "2026-10-23",
+              "links": [
+                {"kind": "web", "label": "Official visitor information", "url": "https://www.museusemonumentos.pt/en/museus-e-monumentos/jeronimos-monastery"},
+                {"kind": "web", "label": "Belém area guide", "url": "https://www.visitlisboa.com/en/regions/belem"},
+                {"kind": "map", "label": "Map reference", "url": "https://www.openstreetmap.org/?mlat=38.69793&mlon=-9.2062#map=17/38.69793/-9.2062"}
+              ]
+            }
+          ],
+          "tips": [
+            "Check the monastery's current opening days and cloister hours before you go; holiday schedules may vary.",
+            "Confirm the ticket-office hours and entry arrangements before your visit."
+          ],
+          "food": "Try a local pastry in Belém, then keep the afternoon flexible for the riverside and surrounding monuments.",
+          "bookings": [
+            {"label": "Check official monastery tickets", "url": "https://mmp.bymeoblueticket.pt/en"}
+          ],
+          "packing": ["Comfortable walking shoes", "Sun protection for the open riverfront"]
+        },
+        {
+          "dayNumber": 3,
+          "date": "2027-05-13",
+          "title": "Sintra and Pena Palace",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Palacio_Nacional_da_Pena%2C_Sintra%2C_Portugal%2C_2019-05-25%2C_DD_131.jpg/960px-Palacio_Nacional_da_Pena%2C_Sintra%2C_Portugal%2C_2019-05-25%2C_DD_131.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Diego Delso · CC BY-SA 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Palacio_Nacional_da_Pena,_Sintra,_Portugal,_2019-05-25,_DD_131.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+          "mode": "walking",
+          "stops": [
+            {
+              "id": "sintra-pena-palace",
+              "name": "Park and National Palace of Pena",
+              "type": "sight",
+              "time": "Late morning",
+              "dwell": 210,
+              "desc": "Spend the day among the palace's colorful Romantic architecture and wooded park paths. The palace ticket is tied to a selected date and time, so build the visit around the slot you book.",
+              "lat": 38.7879028,
+              "lon": -9.3875972,
+              "tags": ["palace", "park"],
+              "source": "https://www.parquesdesintra.pt/en/parks-monuments/park-and-national-palace-of-pena/",
+              "verified": "2026-10-23",
+              "links": [
+                {"kind": "web", "label": "Palace and park information", "url": "https://www.parquesdesintra.pt/en/parks-monuments/park-and-national-palace-of-pena/"},
+                {"kind": "book", "label": "Timed-entry ticket information", "url": "https://www.parquesdesintra.pt/en/plan-your-visit/tickets-palace-of-pena/"},
+                {"kind": "map", "label": "Map reference", "url": "https://www.openstreetmap.org/?mlat=38.7879028&mlon=-9.3875972#map=17/38.7879028/-9.3875972"}
+              ]
+            }
+          ],
+          "tips": [
+            "Allow about 30 minutes to reach the palace from the park entrance, and check the route and access arrangements before you go.",
+            "Check the CP timetable and local connections before setting out, and leave time for transfers."
+          ],
+          "food": "Plan a relaxed lunch in Sintra or at park facilities; check availability before you set out.",
+          "bookings": [
+            {"label": "Choose a dated and timed palace ticket", "url": "https://www.parquesdesintra.pt/en/plan-your-visit/tickets-palace-of-pena/"},
+            {"label": "Check CP train information", "url": "https://www.cp.pt/en"}
+          ],
+          "packing": ["Comfortable shoes for steep park paths", "Light rain layer for changeable hill weather", "Palace ticket for the booked time"]
+        }
+      ]
+    },
+    {
+      "id": "porto-base",
+      "title": "Porto",
+      "subtitle": "Two nights, historic center and riverside",
+      "colorKey": 2,
+      "days": [
+        {
+          "dayNumber": 4,
+          "date": "2027-05-14",
+          "title": "Train north and arrive in Porto",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Porto_-_Esta%C3%A7%C3%A3o_da_Campanh%C3%A3.jpg/960px-Porto_-_Esta%C3%A7%C3%A3o_da_Campanh%C3%A3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Barao78 · CC BY 2.5",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Porto_-_Esta%C3%A7%C3%A3o_da_Campanh%C3%A3.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by/2.5",
+          "stops": [
+            {
+              "id": "porto-campanha-station",
+              "name": "Porto-Campanhã Railway Station",
+              "type": "transport",
+              "time": "Arrival",
+              "dwell": 30,
+              "desc": "Arrive at Porto-Campanhã for your stay in Porto. Check the arrival station for your chosen train and plan the onward transfer to your accommodation.",
+              "lat": 41.14919,
+              "lon": -8.58471,
+              "tags": ["rail", "arrival"],
+              "source": "https://www.cp.pt/info/en/alfa-pendular-train",
+              "verified": "2026-10-23",
+              "links": [
+                {"kind": "web", "label": "CP train information", "url": "https://www.cp.pt/info/en/alfa-pendular-train"},
+                {"kind": "web", "label": "CP online ticket office", "url": "https://www.cp.pt/info/en/w/online-ticket-office"},
+                {"kind": "map", "label": "Map reference", "url": "https://mapcarta.com/N10783341023"}
+              ]
+            }
+          ],
+          "tips": [
+            "Check the departure and arrival stations, current timetable and ticket requirements before you travel.",
+            "Allow time for the local transfer from Campanhã to your Porto accommodation."
+          ],
+          "food": "Keep dinner flexible near your accommodation after the rail journey.",
+          "bookings": [
+            {"label": "Search CP services and tickets", "url": "https://www.cp.pt/en"}
+          ],
+          "packing": ["Keep rail tickets available during the transfer", "Small day bag for the evening"]
+        },
+        {
+          "dayNumber": 5,
+          "date": "2027-05-15",
+          "title": "Tiles, towers and Porto's historic center",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/07/Azuelo_and_mural%2C_S%C3%A3o_Bento_railway_station%2C_Porto%2C_Portugal.jpg/960px-Azuelo_and_mural%2C_S%C3%A3o_Bento_railway_station%2C_Porto%2C_Portugal.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Peter K Burian · CC BY 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Azuelo_and_mural,_S%C3%A3o_Bento_railway_station,_Porto,_Portugal.jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by/4.0",
+          "mode": "walking",
+          "stops": [
+            {
+              "id": "porto-sao-bento",
+              "name": "São Bento Railway Station",
+              "type": "sight",
+              "time": "Morning",
+              "dwell": 40,
+              "desc": "Step into the station vestibule to see its large blue-and-white tile panels depicting Portuguese history and everyday life.",
+              "lat": 41.145557,
+              "lon": -8.6104543,
+              "tags": ["architecture", "tiles"],
+              "source": "https://visitporto.travel/en-GB/poi/5cd04b4ef979e00001fe480a",
+              "verified": "2026-10-23",
+              "links": [
+                {"kind": "web", "label": "Visit Porto information", "url": "https://visitporto.travel/en-GB/poi/5cd04b4ef979e00001fe480a"},
+                {"kind": "map", "label": "Map reference", "url": "https://maps.apple.com/place?address=Porto%2C+Portugal&coordinate=41.145557%2C-8.6104543&name=Porto+S%C3%A3o+Bento&place-id=I2DAB3859C7691F54&_provider=9902"}
+              ]
+            },
+            {
+              "id": "porto-clerigos",
+              "name": "Clérigos Tower",
+              "type": "sight",
+              "time": "Afternoon",
+              "dwell": 75,
+              "desc": "See one of Porto's best-known historic landmarks. Decide whether to climb after checking current access, ticketing, and how the steps suit you.",
+              "lat": 41.14567,
+              "lon": -8.61468,
+              "tags": ["history", "viewpoint"],
+              "source": "https://visitporto.travel/en-GB/poi/5cd04b4bf979e00001939091",
+              "verified": "2026-10-23",
+              "links": [
+                {"kind": "web", "label": "Visit Porto historic district", "url": "https://visitporto.travel/en-GB/districts/historic"},
+                {"kind": "map", "label": "Map reference", "url": "https://mapcarta.com/pt/32914902"}
+              ]
+            }
+          ],
+          "tips": [
+            "The historic center has steep streets and stairs; keep the route flexible and use local transit if needed.",
+            "Check the tower's current opening hours and entry arrangements before you go."
+          ],
+          "food": "Pause for lunch in the historic center and try a local speciality such as Francesinha, Tripas à moda do Porto, or bacalhau à Gomes de Sá.",
+          "bookings": [
+            {"label": "Browse Visit Porto's historic district", "url": "https://visitporto.travel/en-GB/districts/historic"}
+          ],
+          "packing": ["Comfortable shoes for hills and cobbles", "Water bottle"]
+        },
+        {
+          "dayNumber": 6,
+          "date": "2027-05-16",
+          "title": "Ribeira and the Douro waterfront",
+          "photoUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c6/Ribeira_Waterfront_and_Porto_Cathedral_from_Across_the_Douro_River%2C_Porto%2C_Portugal_%2854839755986%29.jpg/960px-Ribeira_Waterfront_and_Porto_Cathedral_from_Across_the_Douro_River%2C_Porto%2C_Portugal_%2854839755986%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "photoCredit": "Dale Cruse · CC BY 4.0",
+          "photoSourceUrl": "https://commons.wikimedia.org/wiki/File:Ribeira_Waterfront_and_Porto_Cathedral_from_Across_the_Douro_River,_Porto,_Portugal_(54839755986).jpg",
+          "photoLicenseUrl": "https://creativecommons.org/licenses/by/4.0",
+          "mode": "walking",
+          "stops": [
+            {
+              "id": "porto-ribeira-square",
+              "name": "Praça da Ribeira",
+              "type": "gem",
+              "time": "Late morning",
+              "dwell": 90,
+              "desc": "Wander the historic riverside square, pause by the Douro, and enjoy the colorful riverfront at an easy pace.",
+              "lat": 41.14045,
+              "lon": -8.61306,
+              "tags": ["riverfront", "historic center"],
+              "source": "https://visitporto.travel/en-GB/poi/5cd04b4ff979e00001f6f762",
+              "verified": "2026-10-23",
+              "links": [
+                {"kind": "web", "label": "Visit Porto information", "url": "https://visitporto.travel/en-GB/poi/5cd04b4ff979e00001f6f762"},
+                {"kind": "web", "label": "Historic district and port cellars", "url": "https://visitporto.travel/en-GB/districts/historic"},
+                {"kind": "map", "label": "Map reference", "url": "https://mapcarta.com/pt/35987100"}
+              ]
+            }
+          ],
+          "tips": [
+            "Walk along the riverfront and decide whether to cross the Luís I Bridge or visit a Gaia port cellar. Check access and cellar hours before setting out; keep the afternoon flexible.",
+            "This final day is intentionally light so you can leave room for your onward journey."
+          ],
+          "food": "Choose a riverside café or a meal in Gaia after checking the menu and current opening hours.",
+          "bookings": [
+            {"label": "Explore official Porto historic-district information", "url": "https://visitporto.travel/en-GB/districts/historic"}
+          ],
+          "packing": ["Comfortable shoes for the riverside and bridge approaches", "Light layer for the river breeze"]
+        }
+      ]
+    }
+  ]
+}

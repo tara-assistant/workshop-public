@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { reorderBases, remapDayState, remapPacking } from './bases.mjs';
+import { reorderBases, remapDayState, remapPacking, dayForPhase } from './bases.mjs';
 
 const sample = () => ({ id: 'trip', phases: [
   { id: 'a', colorKey: 4, days: [{ dayNumber: 1, date: '2026-10-20', stops: [{ id: 'one' }] }] },
@@ -42,4 +42,12 @@ test('invalid moves are ignored and empty bases can move', () => {
   assert.equal(reorderBases(sample(), 'missing', 1), null);
   assert.equal(reorderBases(sample(), 'a', .5), null);
   assert.deepEqual(reorderBases(sample(), 'empty', -1).trip.phases.map((p) => p.id), ['a', 'empty', 'b']);
+});
+
+test('adding within a base prefers its focused day, then open day, then first, never another base', () => {
+  const phase = sample().phases[1];
+  assert.equal(dayForPhase(phase, 5, new Set([4])).dayNumber, 5);
+  assert.equal(dayForPhase(phase, 1, new Set([5])).dayNumber, 5);
+  assert.equal(dayForPhase(phase, 1, new Set([1])).dayNumber, 4);
+  assert.equal(dayForPhase(sample().phases[2], 1, new Set([1])), null);
 });

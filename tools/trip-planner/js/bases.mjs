@@ -29,3 +29,8 @@ export function remapPacking(entries, tripId, dayMap) {
     return dayMap[number] == null ? [key, value] : [`${prefix}${dayMap[number]}|${item}`, value];
   });
 }
+
+export function dayForPhase(phase, focusDay, openDays) {
+  return phase.days.find((day) => day.dayNumber === focusDay)
+    || phase.days.find((day) => openDays.has(day.dayNumber)) || phase.days[0] || null;
+}

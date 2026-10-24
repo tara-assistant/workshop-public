@@ -16,7 +16,8 @@ Trip
     id, title, subtitle, colorKey
     days[]
       dayNumber, title      required, dayNumber unique in the trip
-      date, mode (walking | cycling | driving), photoUrl, photoCredit
+      date, mode (walking | cycling | driving), photoUrl, photoCredit,
+      photoSourceUrl, photoLicenseUrl
       stops[]
         id, name, lat, lon  required, id unique in the trip
         type, time, dwell (minutes), desc, tags[]
@@ -37,7 +38,7 @@ Link kinds: map, book, hike, web, social.
 - Weekdays are not stored. The app works them out from `date`.
 - `dwell` is a suggested stay, not a promise.
 - Boat transfers and technical hikes are never inferred from road routing. The app draws no road route over a boat leg.
-- Photos must show the actual place and come from a source that allows reuse. Fill `imageCredit` or `photoCredit` with author and licence. If you cannot verify a photo, leave it out.
+- Photos must show the actual place and come from a source that allows reuse. For a day photo, fill `photoUrl`, `photoCredit` (author · licence name), `photoSourceUrl` (Commons file page) and `photoLicenseUrl` (exact licence page). For a stop image, use `imageUrl` and `imageCredit`, and put its source and licence URLs in `links` because schema v1 has no dedicated stop-photo URL fields. If you cannot verify the subject and reuse terms, leave the image out.
 - No personal names, home addresses or booking confirmation numbers in a trip file.
 - Unknown fields are kept, so a newer agent's extra data survives an older viewer.
 - Links must be http or https.
@@ -45,7 +46,7 @@ Link kinds: map, book, hike, web, social.
 ## Checking a file
 
 ```sh
-node --input-type=module -e "import {validateTrip,formatErrors} from './schema/validate.mjs'; import fs from 'fs'; const s=JSON.parse(fs.readFileSync('schema/trip.schema.json')); const t=JSON.parse(fs.readFileSync(process.argv[1])); const e=validateTrip(t,s); console.log(e.length?formatErrors(e):'valid')" trip.json
+node --input-type=module -e "import {validateTrip,formatErrors} from './schema/validate.mjs'; import fs from 'fs'; const s=JSON.parse(fs.readFileSync('schema/trip.schema.json')); const t=JSON.parse(fs.readFileSync(process.argv[1])); const e=validateTrip(t,s); if(e.length){console.error(formatErrors(e));process.exit(1)} console.log('valid')" trip.json
 ```
 
 Run it from `tools/trip-planner`.
