@@ -10,16 +10,15 @@ import { publicCards, scan, sharedUiAssets, sharedUiSources, validatePublicCatal
 const projectDir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(projectDir, '../..');
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
-// 23 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder.
-test('catalog allowlist has 27 fixed public release files and uses category source roots', () => {
+// 18 app files, index, Tara, avatar and the UI manifest; the 4 versioned shared assets are added by the builder.
+test('catalog allowlist has 22 fixed public release files and uses category source roots', () => {
   const files = [...validatePublicCatalog(catalog, repositoryRoot, projectDir)];
-  assert.equal(files.length, 27);
+  assert.equal(files.length, 22);
   assert(!files.some(file => /private|projects\.json/.test(file)));
   assert.deepEqual(catalog.projects.map(item => item.sourceRoot), [
-    'tools/trip-planner',
-    'diagnostics/field-atlas',
-    'games/snake'
+    'tools/trip-planner'
   ]);
+  assert.deepEqual(catalog.projects.map(item => item.slug), ['trip-planner']);
   const tripPlanner = catalog.projects.find(item => item.slug === 'trip-planner');
   assert.deepEqual(tripPlanner.files.filter(file => file.startsWith('samples/')).sort(), [
     'samples/portugal-6-day-demo.json',
@@ -37,7 +36,7 @@ for (const [name, change] of [
   ['reserved asset route', item => { item.slug = 'assets'; }],
   ['App Hub template input', item => { item.sourceRoot = 'tools/app-hub'; }],
   ['staging input', item => { item.sourceRoot = 'tools/app-hub/staging/private'; }],
-  ['private-designated source path', item => { item.sourceRoot = 'private/field-atlas'; }],
+  ['private-designated source path', item => { item.sourceRoot = 'private/trip-planner'; }],
   ['legacy nested source path', item => { item.sourceRoot = 'projects/tools/trip-planner'; }],
   ['unknown source category', item => { item.sourceRoot = 'assets/trip-planner'; }],
   ['absolute Windows source', item => { item.sourceRoot = 'C:/private'; }],
@@ -59,7 +58,8 @@ for (const [name, change] of [
 }
 test('reject build operation on an unapproved route', () => {
   const changed = structuredClone(catalog);
-  changed.projects[1].build = 'run-arbitrary-command';
+  changed.projects[0].slug = 'unapproved-app';
+  changed.projects[0].build = 'run-arbitrary-command';
   assert.throws(() => validatePublicCatalog(changed, repositoryRoot, projectDir));
 });
 test('scan byte encodings and expanded credential formats', () => {
@@ -129,6 +129,6 @@ test('card lists are bounded and render all or nothing', () => {
   const container = { innerHTML: 'unchanged' };
   assert.throws(() => renderCards(container, [goodCard, { ...goodCard, href: 'javascript:x' }]));
   assert.equal(container.innerHTML, 'unchanged');
-  assert.equal(renderCards(container, publicCards(catalog)), 3);
-  assert.equal(container.innerHTML.split('class="project-card"').length - 1, 3);
+  assert.equal(renderCards(container, publicCards(catalog)), 1);
+  assert.equal(container.innerHTML.split('class="project-card"').length - 1, 1);
 });

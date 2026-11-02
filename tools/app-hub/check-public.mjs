@@ -16,7 +16,9 @@ const candidateRoot = resolve(process.cwd(), candidateArg);
 const catalog = JSON.parse(await readFile(resolve(projectDir, 'projects.json'), 'utf8'));
 const uiAssets = await sharedUiAssets(repositoryRoot, projectDir);
 const expectedFiles = [...validatePublicCatalog(catalog, repositoryRoot, projectDir), ...uiAssets.map(asset => asset.path)].sort();
-assert.equal(expectedFiles.length, 31, 'Public content allowlist must remain exactly 31 files.');
+assert.equal(expectedFiles.length, 26, 'Public content allowlist must remain exactly 26 files.');
+assert.deepEqual(catalog.projects.map(item => item.slug), ['trip-planner'], 'Trip Planner must be the only public app.');
+assert(!expectedFiles.some(name => /^(?:field-atlas|snake)\//.test(name)), 'Retired routes must be absent from the candidate.');
 const privateBoundary = /private[.-]projects\.|private[- ]apps|PRIVATE_PROJECTS:|No private apps yet|private-apps\.json|private-hub\.html|private-app-hub\.css|catalog\.json/i;
 for (const name of ['index.html', 'tara.html', ...uiAssets.map(asset => `assets/${asset.name}`)]) {
   assert.doesNotMatch((await readSafe(repositoryRoot, resolve(projectDir, name))).toString('utf8'), privateBoundary, `Private address or navigation in public source: ${name}`);
@@ -48,6 +50,7 @@ for (const { path, integrity } of Object.values(candidateManifest.assets)) {
   assert.equal(`sha384-${createHash('sha384').update(publicBytes.get(path)).digest('base64')}`, integrity, `Shared UI asset bytes do not match their pinned hash: ${path}`);
 }
 const portfolioHtml = publicBytes.get('index.html').toString('utf8');
+assert.doesNotMatch(portfolioHtml, /field-atlas|Field Atlas|Snake Arcade|\/snake\//i, 'Retired app cards and links must be absent.');
 const compatibilityHtml = publicBytes.get('tara/index.html').toString('utf8');
 assert.match(compatibilityHtml, /<meta http-equiv="refresh" content="0;url=\/#profile">/);
 assert.match(compatibilityHtml, /window\.location\.replace\('\/#profile'\)/);
@@ -130,17 +133,17 @@ try {
         assert(await page.evaluate(() => Boolean(document.querySelector('#projects').compareDocumentPosition(document.querySelector('#profile')) & Node.DOCUMENT_POSITION_FOLLOWING)), 'Tools must precede the shared profile.');
         assert.match(await page.locator('#projects').innerText(), /Open any tool live, or read its source on GitHub/);
         assert.doesNotMatch(portfolioHtml, /Mapbox/i, 'The portfolio must not mention a Mapbox token.');
-        assert.equal(await page.locator('.project-card').count(), 3);
+        assert.equal(await page.locator('.project-card').count(), 1);
         assert.deepEqual(await page.locator('.project-card h3').allTextContents(), catalog.projects.map(item => item.title));
         assert(await page.locator('.project-card').evaluateAll(cards => cards.every(card => {
           const rect = card.getBoundingClientRect();
           const style = getComputedStyle(card);
           return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
-        })), 'All three catalog cards must be visible, with no conditional hiding.');
+        })), 'The Trip Planner catalog card must be visible, with no conditional hiding.');
         const links = await page.locator('a[href]').evaluateAll(elements => elements.map(element => ({ href: element.getAttribute('href'), target: element.getAttribute('target'), rel: element.getAttribute('rel') })));
-        assert.equal(links.filter(link => !link.href.startsWith('#')).length, 14, 'Expected three Live and three Repo links, four work/docs links and four social/workshop links.');
-        assert.equal(await page.locator('.btn-live').count(), 3);
-        assert.equal(await page.locator('.btn-repo').count(), 3);
+        assert.equal(links.filter(link => !link.href.startsWith('#')).length, 10, 'Expected one Live and one Repo link, four work/docs links and four social/workshop links.');
+        assert.equal(await page.locator('.btn-live').count(), 1);
+        assert.equal(await page.locator('.btn-repo').count(), 1);
         for (const link of links) {
           if (link.href.startsWith('#')) {
             assert(!link.target || link.target === '_self', `Section navigation must stay local: ${link.href}`);
@@ -149,7 +152,7 @@ try {
             assert.deepEqual(new Set((link.rel || '').split(/\s+/)), new Set(['noopener', 'noreferrer']), `Unsafe new-tab link: ${link.href}`);
           }
         }
-        report.linkChecks.push({ route: routePath, width, newTabLinks: 14, sectionLinksStayLocal: true, sharedProfile: true });
+        report.linkChecks.push({ route: routePath, width, newTabLinks: 10, sectionLinksStayLocal: true, sharedProfile: true });
         const favicon = page.locator('link[rel="icon"]');
         assert.equal(await favicon.count(), 1);
         assert.equal(await favicon.getAttribute('type'), 'image/svg+xml');
@@ -252,7 +255,7 @@ try {
       }
     }
     await navPage.close();
-    report.interactions.push(`No private address or navigation in ${mode} mode at 320, 375, and 1280px; section anchors stay local; ${mode === 'launch' ? 'all fourteen public links call Telegram openLink' : 'all fourteen app, source, work/docs and social links open tabs without an opener'}.`);
+    report.interactions.push(`No private address or navigation in ${mode} mode at 320, 375, and 1280px; section anchors stay local; ${mode === 'launch' ? 'all ten public links call Telegram openLink' : 'all ten app, source, work/docs and social links open tabs without an opener'}.`);
   }
   const noJsContext = await browser.newContext({ offline: true, javaScriptEnabled: false, serviceWorkers: 'block' });
   try {
@@ -263,67 +266,6 @@ try {
     assert(await fallbackPage.locator('#profile').getByRole('heading', { name: 'Jihad + Tara', exact: true }).isVisible());
     report.interactions.push('Legacy /tara/ redirects to /#profile with JavaScript enabled and disabled; the template also includes a same-page fallback link.');
   } finally { await noJsContext.close(); }
-  const atlasPage = await context.newPage();
-  await atlasPage.setViewportSize({ width: 375, height: 812 });
-  await atlasPage.goto('https://public.audit.invalid/field-atlas/');
-  await atlasPage.evaluate(() => localStorage.removeItem('field-atlas-inspected'));
-  await atlasPage.reload();
-  await atlasPage.getByRole('button', { name: 'Healthy · 4', exact: true }).click();
-  await atlasPage.getByRole('button', { name: 'Mark inspected on this device', exact: true }).click();
-  await atlasPage.reload();
-  await atlasPage.getByRole('button', { name: 'Healthy · 4', exact: true }).click();
-  assert.match(await atlasPage.locator('#inspection').innerText(), /Marked inspected locally/);
-  await atlasPage.getByRole('button', { name: 'Inspected ✓ · undo', exact: true }).click();
-  assert.match(await atlasPage.locator('#mapNotice').innerText(), /Map library unavailable/);
-  report.interactions.push('Field Atlas offline readings, persistent local inspection mark, undo, and map-unavailable fallback pass.');
-  await atlasPage.close();
-  const mapPage = await context.newPage();
-  await mapPage.setViewportSize({ width: 375, height: 812 });
-  await mapPage.addInitScript(() => {
-    window.__map = { loaded: false, handlers: {}, sources: {}, states: {}, layers: {}, terrain: null, lastEase: null };
-    window.maplibregl = {
-      Map: class {
-        constructor(options) {
-          for (const [id, source] of Object.entries(options.style.sources)) window.__map.sources[id] = { data: source.data, setData(data) { this.data = data; } };
-          for (const layer of options.style.layers) window.__map.layers[layer.id] = { layout: { ...(layer.layout || {}) } };
-        }
-        on(event, ...args) { window.__map.handlers[event] = args.at(-1); }
-        isStyleLoaded() { return window.__map.loaded; }
-        getSource(id) { return window.__map.sources[id]; }
-        setFeatureState({ id }, state) { window.__map.states[id] = state; }
-        setLayoutProperty(id, key, value) { window.__map.layers[id].layout[key] = value; }
-        setTerrain(terrain) { window.__map.terrain = terrain; }
-        addControl() {} fitBounds() {} easeTo(options) { window.__map.lastEase = options; } resize() {}
-      }, NavigationControl: class {}, AttributionControl: class {}
-    };
-  });
-  await mapPage.goto('https://public.audit.invalid/field-atlas/');
-  await mapPage.getByRole('button', { name: 'Healthy · 4', exact: true }).click();
-  await mapPage.evaluate(() => { window.__map.loaded = true; window.__map.handlers.load(); });
-  assert.equal(await mapPage.evaluate(() => window.__map.sources['asset-points'].data.features.length), 4);
-  assert.equal(await mapPage.evaluate(() => window.__map.states.torino.selected), true);
-  await mapPage.getByRole('button', { name: 'Needs a look · 2', exact: true }).click();
-  assert.equal(await mapPage.evaluate(() => window.__map.states.torino.selected), false);
-  assert.equal(await mapPage.evaluate(() => window.__map.states.milano.selected), true);
-  assert.equal(await mapPage.evaluate(() => window.__map.sources['asset-points'].data.features.length), 2);
-  assert.deepEqual(await mapPage.evaluate(() => Object.keys(window.__map.sources).sort()), ['asset-points', 'corridor', 'elevation', 'osm', 'satellite', 'topo']);
-  for (const [button, visibleLayer, hiddenLayer] of [['Satellite · NASA', 'satellite-base', 'osm-base'], ['Topographic', 'topo-base', 'satellite-base'], ['Standard · OSM', 'osm-base', 'topo-base']]) {
-    await mapPage.getByRole('button', { name: button, exact: true }).click();
-    assert.equal(await mapPage.evaluate(id => window.__map.layers[id].layout.visibility, visibleLayer), 'visible');
-    assert.equal(await mapPage.evaluate(id => window.__map.layers[id].layout.visibility, hiddenLayer), 'none');
-    assert.equal(await mapPage.getByRole('button', { name: button, exact: true }).getAttribute('aria-pressed'), 'true');
-  }
-  const terrainButton = mapPage.getByRole('button', { name: '3D terrain', exact: true });
-  await terrainButton.click();
-  assert.equal(await mapPage.evaluate(() => window.__map.terrain.source), 'elevation');
-  assert.equal(await mapPage.evaluate(() => window.__map.lastEase.pitch), 58);
-  assert.equal(await terrainButton.getAttribute('aria-pressed'), 'true');
-  await terrainButton.click();
-  assert.equal(await mapPage.evaluate(() => window.__map.terrain), null);
-  assert.equal(await mapPage.evaluate(() => window.__map.lastEase.pitch), 0);
-  assert.equal(await terrainButton.getAttribute('aria-pressed'), 'false');
-  report.interactions.push('Field Atlas delayed map load and asset filters pass; OSM, satellite, and topographic visibility switch correctly; elevation terrain turns on and off with the 3D pitch and pressed state.');
-  await mapPage.close();
   for (const asset of uiAssets.filter(item => item.name.endsWith('.css'))) assert(servedFiles.has(asset.path), `Versioned ${asset.name} was not loaded.`);
   assert(![...externalRequests].some(host => /^private[.-]/i.test(host)), 'A public page contacted a private host.');
   assert.deepEqual(missingLocalFiles, [], 'Candidate requested a file outside the public allowlist.');
