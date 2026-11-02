@@ -9,8 +9,6 @@ public/
 ├── .github/workflows/public-checks.yml
 ├── .node-version
 ├── .python-version
-├── diagnostics/field-atlas/
-├── games/snake/
 ├── tools/app-hub/
 ├── tools/trip-planner/
 ├── .gitignore
@@ -32,7 +30,7 @@ node --test tools/app-hub/release-inputs.test.mjs tools/app-hub/build-pages.test
 node tools/app-hub/build-pages.mjs
 ```
 
-The Pages entry point builds a new `dist/` with exactly the public catalog's allowed browser files, pinned shared UI assets, and generated `_headers`. The current catalog produces 32 deployment files: 31 allowlisted content/asset files and `_headers`. It rejects existing output, links, unsafe paths, and common credential patterns. Public builds never read private source.
+The Pages entry point builds a new `dist/` with exactly the public catalog's allowed browser files, pinned shared UI assets, and generated `_headers`. The current catalog produces 27 deployment files: 26 allowlisted content/asset files and `_headers`. It rejects existing output, links, unsafe paths, and common credential patterns. Public builds never read private source.
 
 For offline browser checks, build a content-only candidate first:
 
@@ -41,7 +39,7 @@ node tools/app-hub/build.mjs --out tools/app-hub/staging/<fresh-name>
 node tools/app-hub/check-public.mjs tools/app-hub/staging/<fresh-name>
 ```
 
-Set `PLAYWRIGHT_MODULE` only when needed. These checks cover the exact 31-file content allowlist, shared profile/redirect, inline favicon, safe new-tab app/work/docs/social links, local section anchors, both downloadable trip samples and photo metadata, absence of private addresses/navigation, and controls at 320/375/1280 pixels. Trip Planner and Snake Arcade are working browser tools; Field Atlas remains a prototype with synthetic data. The checker saves fresh screenshots, including home views at 375×812 and 1280×900, and prints their paths. These checks do not verify live hosting headers, login, or real Telegram clients. Ignored candidates and temporary screenshots can be retained for operator review.
+Set `PLAYWRIGHT_MODULE` only when needed. These checks cover the exact 26-file content allowlist, shared profile/redirect, inline favicon, safe new-tab app/work/docs/social links, local section anchors, both downloadable trip samples and photo metadata, absence of private addresses/navigation, and controls at 320/375/1280 pixels. Trip Planner is the only public app. The checker saves fresh screenshots, including home views at 375×812 and 1280×900, and prints their paths. These checks do not verify live hosting headers, login, or real Telegram clients. Ignored candidates and temporary screenshots can be retained for operator review.
 
 ## Shared UI and privacy
 
@@ -57,6 +55,6 @@ The `workshop-public` Pages project serves the public custom domain and is conne
 
 Move approved original public source here and remove its private copy through a reviewed private commit and push. Local deletion alone does not update the remote or erase historical commits. Do not force-push or rewrite history without explicit approval.
 
-Public apps request visitors' own browser-safe keys and store them only in their browsers. Never bundle server keys, environment secrets, private research, or personal files.
+Trip Planner requires no account or API key and stores trips only in the visitor's browser. Never bundle server keys, environment secrets, private research, or personal files.
 
 Original work is copyright © 2026 Jihad Karaki and licensed under the MIT License in `LICENSE`. Third-party notices and terms remain separate.

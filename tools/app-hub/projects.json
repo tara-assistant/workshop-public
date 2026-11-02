@@ -30,28 +30,6 @@
         "samples/sardegna.json",
         "samples/portugal-6-day-demo.json"
       ]
-    },
-    {
-      "slug": "field-atlas",
-      "title": "Field Atlas",
-      "icon": "◈",
-      "category": "Field diagnostics · maps",
-      "description": "An interactive Italy map demo with synthetic vibration readings, asset selection, and local inspection marks.",
-      "privacy": "Map tiles and elevation come directly from their named providers. Asset readings are simulated; inspection marks stay in this browser.",
-      "status": "Live",
-      "sourceRoot": "diagnostics/field-atlas",
-      "files": ["index.html", "app.js"]
-    },
-    {
-      "slug": "snake",
-      "title": "Snake Arcade",
-      "icon": "↗",
-      "category": "Game · mobile",
-      "description": "A responsive arcade game with keyboard and touch controls, pause, replay, and a browser-local high score.",
-      "privacy": "No account or app API key. Your best score is stored in this browser.",
-      "status": "Live",
-      "sourceRoot": "games/snake",
-      "files": ["index.html", "styles.css", "game.js"]
     }
   ]
 }
